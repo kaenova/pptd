@@ -1,0 +1,110 @@
+pageType: content
+background: {type: solid, color: "#FFFFFF"}
+elements:
+  - elementId: c-candle
+    elementType: chart
+    bounds: [30, 40, 300, 230]
+    title: Candlestick
+    series:
+      - type: candlestick
+        encode: {x: d, open: o, high: h, low: l, close: c}
+        upBars: {fill: "#EF4444"}
+        downBars: {fill: "#22C55E"}
+    data:
+      cols: [d, o, h, l, c]
+      rows:
+        - [Mon, 10, 12, 9, 11]
+        - [Tue, 11, 13, 10, 12]
+        - [Wed, 12, 12.5, 9.5, 10]
+        - [Thu, 10, 14, 10, 13]
+        - [Fri, 13, 15, 12.5, 14]
+
+  - elementId: c-water
+    elementType: chart
+    bounds: [345, 40, 280, 230]
+    title: Waterfall
+    series:
+      - type: waterfall
+        encode: {x: s, y: v, isTotal: t}
+        dataLabels: {show: true, numberFormat: "0"}
+    data:
+      cols: [s, v, t]
+      rows:
+        - [Start, 120, true]
+        - [Sales, 60, false]
+        - [Tax, -25, false]
+        - [Cost, -40, false]
+        - [End, 115, true]
+
+  - elementId: c-heat
+    elementType: chart
+    bounds: [640, 40, 280, 230]
+    title: Heatmap
+    series:
+      - type: heatmap
+        encode: {x: day, y: hour, value: load}
+        colorScheme: ["#FDE68A", "#B91C1C"]
+        colorbar: true
+        dataLabels: {show: true, numberFormat: "0"}
+    data:
+      cols: [day, hour, load]
+      rows:
+        - [Mon, 9, 30]
+        - [Mon, 15, 80]
+        - [Tue, 9, 25]
+        - [Tue, 15, 90]
+        - [Wed, 9, 35]
+        - [Wed, 15, 60]
+
+  - elementId: c-treemap
+    elementType: chart
+    bounds: [30, 290, 280, 230]
+    title: Treemap
+    series:
+      - type: treemap
+        encode: {category: seg, value: val, parent: p}
+        fill: ["#2563EB", "#F59E0B", "#10B981"]
+        dataLabels: {show: true, content: category}
+    data:
+      cols: [seg, val, p]
+      rows:
+        - [Hardware, 45, null]
+        - [Software, 35, null]
+        - [Services, 20, null]
+        - [Phones, 30, Hardware]
+        - [Laptops, 15, Hardware]
+
+  - elementId: c-sunburst
+    elementType: chart
+    bounds: [345, 290, 260, 230]
+    title: Sunburst
+    series:
+      - type: sunburst
+        encode: {category: name, parent: par, value: val}
+        fill: ["#3B82F6", "#8B5CF6", "#F59E0B", "#10B981"]
+    data:
+      cols: [name, par, val]
+      rows:
+        - [Core, null, 100]
+        - [API, Core, 40]
+        - [UI, Core, 35]
+        - [CLI, Core, 25]
+        - [REST, API, 25]
+        - [GraphQL, API, 15]
+
+  - elementId: c-sankey
+    elementType: chart
+    bounds: [640, 290, 280, 230]
+    title: Sankey
+    series:
+      - type: sankey
+        encode: {source: s, target: t, flow: v}
+        dataLabels: {show: true, numberFormat: "0"}
+    data:
+      cols: [s, t, v]
+      rows:
+        - [Web, Signup, 50]
+        - [Web, Direct, 20]
+        - [Ads, Signup, 30]
+        - [Signup, Purchase, 60]
+        - [Direct, Purchase, 10]

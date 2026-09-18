@@ -1,0 +1,38 @@
+version: v2
+title: pptd_utils full-spec fixture
+size: [960, 540]
+theme:
+  colors:
+    primary: "#2563EB"
+    accent: "#F59E0B"
+    text: "#1F2937"
+    muted: "#6B7280"
+  textStyles:
+    title:
+      fontSize: 40
+      color: "$primary"
+      bold: true
+    body:
+      fontSize: 16
+      color: "$text"
+      lineHeight: 1.5
+  tableStyles:
+    default:
+      firstRowStyle:
+        fill: {type: solid, color: "$primary"}
+        color: "#ffffff"
+        bold: true
+      bodyStyles:
+        - {fill: {type: solid, color: "#F8FAFC"}}
+        - {fill: {type: solid, color: "#FFFFFF"}}
+      cellStyle:
+        align: [center, middle]
+        fontSize: 14
+pages:
+  - pages/1_rich.page
+  - pages/2_shapes_lines.page
+  - pages/3_table.page
+  - pages/4_chart_native.page
+  - pages/5_chart_native2.page
+  - pages/6_chart_raster.page
+  - pages/7_media_anim.page

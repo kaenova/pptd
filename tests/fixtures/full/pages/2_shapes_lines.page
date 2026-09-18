@@ -1,0 +1,91 @@
+pageType: content
+background: {type: solid, color: "#FFFFFF"}
+notes: Shapes (presets, adjustments, custom hollow), lines (sharp/round/smooth bezier + arrows).
+elements:
+  - elementId: s-round
+    elementType: shape
+    bounds: [60, 50, 180, 100]
+    shapeName: roundRect
+    adjustments: [30000]
+    fill: {type: solid, color: "$primary"}
+    border: {style: solid, width: 2, color: "$accent"}
+
+  - elementId: s-star
+    elementType: shape
+    bounds: [270, 50, 120, 120]
+    shapeName: star5
+    fill: {type: solid, color: "$accent"}
+    rotation: 15
+
+  - elementId: s-donut
+    elementType: shape
+    bounds: [420, 50, 110, 110]
+    shapeName: donut
+    fill: {type: solid, color: "#10B981"}
+    opacity: 0.55
+
+  - elementId: s-grad
+    elementType: shape
+    bounds: [560, 50, 180, 110]
+    shapeName: ellipse
+    fill:
+      type: gradient
+      gradientType: radial
+      stops:
+        - {position: 0, color: "#FDE68A"}
+        - {position: 1, color: "$accent"}
+    shadow: {blur: 10, color: "#00000055", offset: [2, 4]}
+
+  - elementId: s-custom
+    elementType: shape
+    bounds: [770, 50, 140, 140]
+    shapeName: custom
+    viewBox: [1000, 1000]
+    path: "M500,0 A500,500 0 1 1 499,0 Z M500,200 A300,300 0 1 0 499,200 Z"
+    fill: {type: solid, color: "#6366F1"}
+
+  - elementId: s-flip
+    elementType: shape
+    bounds: [60, 180, 120, 60]
+    shapeName: rightArrow
+    flip: [true, false]
+    fill: {type: solid, color: "#EF4444"}
+
+  - elementId: s-chev
+    elementType: shape
+    bounds: [200, 180, 120, 60]
+    shapeName: chevron
+    fill: {type: solid, color: "#8B5CF6"}
+    border: {style: dash, width: 1, color: "#312E81"}
+
+  - elementId: l-sharp
+    elementType: line
+    bounds: [60, 280, 300, 100]
+    viewBox: [300, 100]
+    points: "0,50 100,10 200,90 300,50"
+    curve: sharp
+    border: {style: solid, width: 2, color: "$primary"}
+
+  - elementId: l-smooth
+    elementType: line
+    bounds: [400, 280, 300, 100]
+    viewBox: [300, 100]
+    points: "0,50 100,10 200,90 300,50"
+    curve: smooth
+    border: {style: solid, width: 3, color: "#F59E0B"}
+
+  - elementId: l-arrow
+    elementType: line
+    bounds: [60, 400, 840, 80]
+    viewBox: [840, 80]
+    points: "0,70 250,10 500,60 840,20"
+    curve: round
+    arrow: [null, stealth]
+    border: {style: solid, width: 2, color: "#10B981"}
+
+  - elementId: l-dot
+    elementType: line
+    bounds: [60, 490, 200, 20]
+    viewBox: [200, 20]
+    points: "0,10 200,10"
+    border: {style: dot, width: 1, color: "$muted"}

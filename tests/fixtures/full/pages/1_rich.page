@@ -1,0 +1,78 @@
+pageType: cover
+background:
+  type: gradient
+  gradientType: linear
+  angle: 135
+  stops:
+    - {position: 0, color: "#0F172A"}
+    - {position: 1, color: "#1E3A8A"}
+notes: Cover with the full rich-text tag set, gradient text and text shadow.
+elements:
+  - elementId: title
+    elementType: text
+    bounds: [80, 60, 800, 90]
+    content:
+      style: "$title"
+      align: [center, middle]
+      letterSpacing: 2
+      text: Full Spec Fixture
+
+  - elementId: rich
+    elementType: text
+    bounds: [80, 170, 400, 300]
+    content:
+      fontSize: 14
+      color: "#E5E7EB"
+      lineHeight: 1.4
+      text: |
+        <p><strong>Bold</strong>, <em>italic</em>, <u>underline</u>, <s>strike</s>, sup<sup>2</sup>, sub<sub>2</sub>.</p>
+        <p>Link: <a href="https://example.com">example</a> and <span style="color:$accent; font-size:18px; background-color:#111827">styled span</span>.</p>
+        <ul><li>bullet one</li><li style="list-style-type:square">square bullet</li></ul>
+        <ol><li>first</li><li>second</li></ol>
+        <p style="text-align:right; margin-top:8px">right para with margin</p>
+        <p>line one<br/>line two via br</p>
+
+  - elementId: grad-text
+    elementType: text
+    bounds: [500, 170, 380, 70]
+    content:
+      align: [center, middle]
+      gradient:
+        type: gradient
+        gradientType: linear
+        angle: 90
+        stops:
+          - {position: 0, color: "$accent"}
+          - {position: 1, color: "#EF4444"}
+      text: |
+        <p><span style="font-size:36px">GRADIENT</span></p>
+
+  - elementId: shadow-text
+    elementType: text
+    bounds: [500, 260, 380, 60]
+    content:
+      align: [center, middle]
+      color: "#FFFFFF"
+      shadow: {blur: 6, color: "#000000AA", offset: [0, 3]}
+      text: |
+        <p><span style="font-size:28px">shadowed</span></p>
+
+  - elementId: math
+    elementType: text
+    bounds: [80, 460, 400, 60]
+    content:
+      color: "#FBBF24"
+      text: |
+        <p>Pythagoras: \(a^2 + b^2 = c^2\)</p>
+
+  - elementId: lhpx
+    elementType: text
+    bounds: [500, 340, 380, 120]
+    content:
+      fontSize: 12
+      lineHeightPx: 22
+      color: "#93C5FD"
+      text: |
+        <p>fixed line height 22px line one</p>
+        <p>fixed line height 22px line two</p>
+        <p style="line-height:1.8">paragraph override 1.8x</p>

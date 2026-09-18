@@ -1,0 +1,85 @@
+pageType: content
+background: {type: solid, color: "#FFFFFF"}
+elements:
+  - elementId: c-area
+    elementType: chart
+    bounds: [40, 40, 420, 230]
+    title: Area
+    data:
+      cols: [w, web, app]
+      rows:
+        - [W1, 200, 120]
+        - [W2, 240, 160]
+        - [W3, 260, 200]
+        - [W4, 280, 240]
+    series:
+      - type: area
+        encode: {x: w, y: web}
+        name: Web
+        areaColor: "#5470C6"
+      - type: area
+        encode: {x: w, y: app}
+        name: App
+        areaColor: "#91CC75"
+
+  - elementId: c-radar
+    elementType: chart
+    bounds: [500, 40, 420, 230]
+    title: Radar
+    spokeAxis: {min: 0, max: 100}
+    data:
+      cols: [dim, score, target]
+      rows:
+        - [Speed, 80, 70]
+        - [Quality, 90, 75]
+        - [Cost, 60, 50]
+        - [Scope, 70, 65]
+    series:
+      - type: radar
+        encode: {category: dim, y: score}
+        name: Score
+        lineColor: "#2563EB"
+      - type: radar
+        encode: {category: dim, y: target}
+        name: Target
+        lineColor: "#F59E0B"
+        areaColor: "#F59E0B55"
+
+  - elementId: c-bubble
+    elementType: chart
+    bounds: [40, 290, 420, 230]
+    title: Bubble
+    xAxis: {title: Age}
+    yAxis: {title: Income}
+    seriesDefaults:
+      bubble: {sizeScale: sqrt}
+    series:
+      - type: bubble
+        encode: {x: age, y: inc, size: pop}
+        name: Users
+        fill: "#5470C6"
+    data:
+      cols: [age, inc, pop]
+      rows:
+        - [22, 5, 120]
+        - [28, 12, 380]
+        - [45, 40, 180]
+        - [52, 60, 90]
+
+  - elementId: c-hbar
+    elementType: chart
+    bounds: [500, 290, 420, 230]
+    title: Horizontal Bars
+    xAxis: {label: {numberFormat: "#,##0"}}
+    series:
+      - type: bar
+        encode: {x: headcount, y: dept}
+        fill: "$primary"
+        dataLabels: {show: true, numberFormat: "#,##0"}
+    data:
+      cols: [dept, headcount]
+      rows:
+        - [Engineering, 120]
+        - [Product, 45]
+        - [Design, 30]
+        - [Operations, 60]

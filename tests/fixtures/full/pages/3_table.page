@@ -1,0 +1,84 @@
+pageType: content
+background: {type: solid, color: "#F1F5F9"}
+notes: Tables with theme style, merges, BorderSpec variants, gradient cell fill.
+elements:
+  - elementId: t-basic
+    elementType: table
+    bounds: [60, 60, 500, 220]
+    columnWidths: [0.3, 0.35, 0.35]
+    rowHeights: [0.3, 0.35, 0.35]
+    style: "$default"
+    rows:
+      - - text: Metric
+        - text: 2023
+        - text: 2024
+      - - text: Revenue
+        - text: "82.5"
+        - text: "96.3"
+      - - text: <strong>Net</strong>
+        - text: "12.1"
+        - text: "15.8"
+
+  - elementId: t-merged
+    elementType: table
+    bounds: [600, 60, 300, 220]
+    columnWidths: [0.33, 0.33, 0.34]
+    rowHeights: [0.33, 0.33, 0.34]
+    rows:
+      - - text: Merged
+          fill: {type: solid, color: "$accent"}
+          rowSpan: 2
+          colSpan: 2
+        - text: C1
+      - - text: C2
+      - - text: A3
+        - text: B3
+        - text: C3
+
+  - elementId: t-borders
+    elementType: table
+    bounds: [60, 310, 500, 180]
+    columnWidths: [0.25, 0.25, 0.25, 0.25]
+    rowHeights: [0.5, 0.5]
+    style:
+      cellStyle:
+        align: [center, middle]
+        border: [{style: solid, width: 2, color: "#111827"}, null]
+      firstRowStyle:
+        fill:
+          type: gradient
+          gradientType: linear
+          angle: 0
+          stops:
+            - {position: 0, color: "$primary"}
+            - {position: 1, color: "#7C3AED"}
+        color: "#FFFFFF"
+    rows:
+      - - text: One
+        - text: Two
+        - text: Three
+        - text: Four
+      - - text: a
+        - text: b
+        - text: c
+        - text: d
+
+  - elementId: t-alt
+    elementType: table
+    bounds: [600, 310, 300, 180]
+    columnWidths: [0.5, 0.5]
+    rowHeights: [0.34, 0.33, 0.33]
+    style:
+      cellStyle: {fontSize: 12, border: null}
+      firstRowStyle: {bold: true, fill: {type: solid, color: "#111827"}, color: "#F9FAFB"}
+      firstColumnStyle: {italic: true, color: "$primary"}
+      bodyStyles:
+        - {fill: {type: solid, color: "#ECFDF5"}}
+        - {fill: {type: solid, color: "#FEF3C7"}}
+    rows:
+      - - text: Key
+        - text: Val
+      - - text: k1
+        - text: v1
+      - - text: k2
+        - text: v2

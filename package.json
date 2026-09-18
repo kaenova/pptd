@@ -1,16 +1,16 @@
 {
-  "name": "open-kimi-ppt-skill",
+  "name": "cowork-ppt-skill",
   "version": "1.2.0",
-  "description": "Unofficial reverse-engineered Kimi Slides skill for AI coding agents with local PPTD editing and PPTX export.",
+  "description": "Unofficial reverse-engineered cowork Slides skill for AI coding agents with local PPTD editing and PPTX export.",
   "license": "MIT",
   "author": "binaryify",
-  "homepage": "https://github.com/binaryify/open-kimi-ppt-skill#readme",
+  "homepage": "https://github.com/binaryify/cowork-ppt-skill#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/binaryify/open-kimi-ppt-skill.git"
+    "url": "git+https://github.com/binaryify/cowork-ppt-skill.git"
   },
   "bugs": {
-    "url": "https://github.com/binaryify/open-kimi-ppt-skill/issues"
+    "url": "https://github.com/binaryify/cowork-ppt-skill/issues"
   },
   "keywords": [
     "ppt",
@@ -18,7 +18,7 @@
     "slides",
     "presentation",
     "pptd",
-    "kimi",
+    "cowork",
     "agent-skill",
     "codex",
     "claude-code",
@@ -27,24 +27,28 @@
   ],
   "type": "module",
   "bin": {
-    "open-kimi-ppt-skill": "bin/open-kimi-ppt-skill.js"
+    "cowork-ppt-skill": "bin/cowork-ppt-skill.js"
   },
   "files": [
     "bin/",
     "editor/",
     "lib/",
-    "skills/open-kimi-ppt/SKILL.md",
-    "skills/open-kimi-ppt/reference/",
-    "skills/open-kimi-ppt/scripts/export_host.html",
-    "skills/open-kimi-ppt/scripts/export_images.py",
-    "skills/open-kimi-ppt/scripts/export_pptx.py",
+    "skills/cowork-ppt/SKILL.md",
+    "skills/cowork-ppt/reference/",
+    "skills/cowork-ppt/scripts/export_host.html",
+    "skills/cowork-ppt/scripts/export_images.py",
+    "skills/cowork-ppt/scripts/export_pptx.py",
+    "skills/cowork-ppt/SKILL.md",
+    "skills/cowork-ppt/reference/",
+    "skills/cowork-ppt/scripts/pptd_utils/",
     "README.md",
     "README_EN.md",
     "theme.md",
     "theme_EN.md"
   ],
   "scripts": {
-    "test": "node --test",
+    "test": "node --test && python3 tests/run.py",
+    "sync:pptd": "rm -rf skills/cowork-ppt/scripts/pptd_utils && cp -R pptd_utils skills/cowork-ppt/scripts/pptd_utils && find skills/cowork-ppt/scripts/pptd_utils -name __pycache__ -type d -exec rm -rf {} +",
     "pack:check": "npm pack --dry-run",
     "prepublishOnly": "npm test"
   },

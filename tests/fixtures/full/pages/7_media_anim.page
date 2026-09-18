@@ -1,0 +1,111 @@
+pageType: content
+background:
+  type: image
+  src: media/cover.jpg
+notes: Image fills, cropShape, icons with gradient/border/shadow, animations.
+elements:
+  - elementId: img-cover
+    elementType: image
+    bounds: [40, 40, 240, 160]
+    src: media/cover.jpg
+    fit: {mode: cover}
+    border: {style: solid, width: 3, color: "#FFFFFF"}
+
+  - elementId: img-contain
+    elementType: image
+    bounds: [310, 40, 200, 160]
+    src: media/avatar.png
+    fit: {mode: contain}
+    backgroundColor: "#E5E7EB"
+
+  - elementId: img-crop
+    elementType: image
+    bounds: [540, 40, 200, 160]
+    src: media/cover.jpg
+    crop: {left: 0.15, top: 0.05, right: 0.15, bottom: 0.05}
+    opacity: 0.7
+
+  - elementId: img-shape
+    elementType: image
+    bounds: [770, 40, 160, 160]
+    src: media/avatar.png
+    cropShape: {shapeName: roundRect, adjustments: [15000]}
+    shadow: {blur: 8, color: "#00000080", offset: [0, 4]}
+
+  - elementId: icon-solid
+    elementType: icon
+    bounds: [40, 240, 100, 100]
+    iconName: fas:rocket
+    fill: {type: solid, color: "#F59E0B"}
+
+  - elementId: icon-grad
+    elementType: icon
+    bounds: [170, 240, 100, 100]
+    iconName: fas:chart-line
+    fill:
+      type: gradient
+      stops:
+        - {position: 0, color: "#2563EB"}
+        - {position: 1, color: "#06B6D4"}
+
+  - elementId: icon-border
+    elementType: icon
+    bounds: [300, 240, 100, 100]
+    iconName: far:heart
+    fill: {type: solid, color: "#EF4444"}
+    border: {style: solid, width: 4, color: "#FECDD3"}
+
+  - elementId: icon-shadow
+    elementType: icon
+    bounds: [430, 240, 100, 100]
+    iconName: fab:github
+    fill: {type: solid, color: "#111827"}
+    shadow: {blur: 6, color: "#00000066", offset: [3, 3]}
+
+  - elementId: anim-box
+    elementType: shape
+    bounds: [560, 240, 120, 60]
+    shapeName: rect
+    fill: {type: solid, color: "$primary"}
+
+  - elementId: anim-box-label
+    elementType: text
+    bounds: [560, 250, 120, 40]
+    content:
+      color: "#FFFFFF"
+      align: [center, middle]
+      text: Animated
+
+  - elementId: anim-box2
+    elementType: shape
+    bounds: [700, 240, 120, 60]
+    shapeName: ellipse
+    fill: {type: solid, color: "$accent"}
+
+animations:
+  - elementId: icon-solid
+    effect: fade-in
+    durationMs: 600
+  - elementId: icon-grad
+    effect: fly-in
+    direction: up
+    trigger: withPrevious
+  - elementId: anim-box
+    effect: zoom-in
+    durationMs: 800
+  - elementId: anim-box
+    effect: pulse
+    trigger: afterPrevious
+    repeat: 2
+  - elementId: icon-shadow
+    effect: fill-color
+    color: "#10B981"
+    trigger: afterPrevious
+  - elementId: icon-border
+    effect: transparency
+    amount: 0.4
+    trigger: withPrevious
+  - elementId: anim-box2
+    effect: motion-path
+    path: "M0,0 C50,-40 100,40 160,0"
+    durationMs: 1500

@@ -1,0 +1,119 @@
+pageType: content
+background: {type: solid, color: "#FFFFFF"}
+elements:
+  - elementId: c-bar
+    elementType: chart
+    bounds: [40, 40, 430, 240]
+    title: Bar + Line
+    data:
+      cols: [quarter, revenue, cost, growth]
+      rows:
+        - [Q1, 120, 220, 0.1]
+        - [Q2, 132, 182, 0.25]
+        - [Q3, 101, 191, 0.2]
+        - [Q4, 134, 234, 0.18]
+    seriesDefaults:
+      bar: {fill: "$primary"}
+    series:
+      - type: bar
+        encode: {x: quarter, y: revenue}
+        name: Revenue
+      - type: bar
+        encode: {x: quarter, y: cost}
+        name: Expenses
+        fill: "$accent"
+      - type: line
+        encode: {x: quarter, y: growth}
+        name: Growth
+        lineColor: "#EF4444"
+        smooth: true
+        yAxisIndex: 1
+        dataLabels: {show: true, numberFormat: "0%"}
+    yAxis:
+      - {title: Amount}
+      - {title: Rate, label: {numberFormat: "0%"}}
+
+  - elementId: c-stacked
+    elementType: chart
+    bounds: [500, 40, 420, 240]
+    title: Stacked Bar
+    data:
+      cols: [q, a, b]
+      rows:
+        - [Q1, 30, 70]
+        - [Q2, 45, 55]
+        - [Q3, 60, 40]
+    seriesDefaults:
+      bar: {stack: value}
+    series:
+      - type: bar
+        encode: {x: q, y: a}
+        fill: "#2563EB"
+      - type: bar
+        encode: {x: q, y: b}
+        fill: "#93C5FD"
+
+  - elementId: c-line
+    elementType: chart
+    bounds: [40, 300, 430, 220]
+    title: Line variants
+    data:
+      cols: [m, actual, target, baseline]
+      rows:
+        - [Jan, 72, 65, 50]
+        - [Feb, 85, 70, 50]
+        - [Mar, null, 78, 50]
+        - [Apr, 90, 82, 50]
+    yAxis: {min: 0, max: 100, gridLine: {color: "#E5E7EB"}}
+    series:
+      - type: line
+        encode: {x: m, y: actual}
+        name: Actual
+        lineColor: "#5470C6"
+        width: 3
+        smooth: true
+      - type: line
+        encode: {x: m, y: target}
+        name: Target
+        lineColor: "#EE6666"
+        lineStyle: dash
+        marker: {shape: diamond, size: 8}
+      - type: line
+        encode: {x: m, y: baseline}
+        name: Baseline
+        lineColor: "#999999"
+        width: 1
+        marker: false
+
+  - elementId: c-pie
+    elementType: chart
+    bounds: [500, 300, 200, 220]
+    series:
+      - type: pie
+        encode: {category: seg, value: val}
+        innerRadius: 0.5
+        dataLabels: {show: true, content: percentage}
+    data:
+      cols: [seg, val]
+      rows:
+        - [A, 40]
+        - [B, 25]
+        - [C, 20]
+        - [D, 15]
+
+  - elementId: c-scatter
+    elementType: chart
+    bounds: [720, 300, 200, 220]
+    xAxis: {title: x}
+    series:
+      - type: scatter
+        encode: {x: xa, y: ya}
+        name: G1
+        marker: {shape: circle, size: 7}
+    data:
+      cols: [xa, ya]
+      rows:
+        - [1, 2]
+        - [2, 4]
+        - [3, 1]
+        - [4, 5]
