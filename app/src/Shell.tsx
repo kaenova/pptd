@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { LoadedProject } from './types'
 import { folderSource, filesFromDrop, httpSource, loadProject, stripRoot } from './load'
 import { Viewer } from './Viewer'
-import { DeckView } from './Renderer'
+import { FileExplorer } from './FileExplorer'
 
 const EXAMPLE_BASE = '/example/yu7-ppt' // dev proxy into the repo's example decks
 // ?deck=xiaomi-yu7-ppt-animation loads another example deck; ?qa=<folder> = dev-only
@@ -23,18 +23,15 @@ export function Shell() {
     setCur(0)
   }, [])
 
-  const handleFiles = useCallback(
-    async (files: File[]) => {
-      try {
-        setStatus({ msg: 'loading…', err: false })
-        show(await loadProject(folderSource(stripRoot(files))))
-        setStatus(null)
-      } catch (e) {
-        setStatus({ msg: e instanceof Error ? e.message : String(e), err: true })
-      }
-    },
-    [show],
-  )
+  const handleFiles = useCallback(async (files: File[]) => {
+    try {
+      setStatus({ msg: 'loading…', err: false })
+      show(await loadProject(folderSource(stripRoot(files))))
+      setStatus(null)
+    } catch (e) {
+      setStatus({ msg: e instanceof Error ? e.message : String(e), err: true })
+    }
+  }, [show])
 
   const loadExample = useCallback(async () => {
     try {
@@ -92,65 +89,27 @@ export function Shell() {
 
   return (
     <div className={`shell${present ? ' presenting' : ''}`}>
-      <aside className="rail">
-        <h1>Slides</h1>
-        <div className="thumbs">
-          {project?.pages.map((_, i) => (
-            <div
-              key={i}
-              className={`thumb${i === cur ? ' active' : ''}`}
-              style={{ height: (112 * project.size[1]) / project.size[0] }}
-              onClick={() => setCur(i)}
-            >
-              <div
-                className="mini"
-                style={{
-                  width: project.size[0],
-                  height: project.size[1],
-                  transform: `scale(${112 / project.size[0]})`,
-                  transformOrigin: 'top left',
-                  position: 'absolute',
-                  overflow: 'hidden',
-                  background: '#fff',
-                }}
-              >
-                <DeckView project={project} index={i} />
-              </div>
-              <span className="no">{i + 1}</span>
-            </div>
-          ))}
-        </div>
-        {!project && <p className="hint">upload a folder, or load the example deck</p>}
-      </aside>
-
+      <FileExplorer project={project} onFiles={files => void handleFiles(files)} currentSlide={cur} onSlideChange={setCur} />
       <main className="main">
         <div className="bar">
-          <label className="btn">
-            📁 Upload .pptd folder
-            <input
-              type="file"
-              hidden
-              multiple
-              // @ts-expect-error non-standard but universal
-              webkitdirectory=""
-              onChange={e => e.target.files && handleFiles([...e.target.files])}
-            />
-          </label>
+          <div className="bar-title">
+            <span className="bar-mark">P</span>
+            <b>{project?.title ?? 'PPTD Viewer'}</b>
+          </div>
           <button className="ghost" onClick={loadExample}>
-            load example
+            Load example
           </button>
-          <b>{project?.title ?? 'PPTD Viewer'}</b>
           {n > 0 && (
             <span className="dim">
               slide {cur + 1} / {n}
             </span>
           )}
-          {status && <span style={{ color: status.err ? '#f85' : '#7ee787' }}>{status.msg}</span>}
+          {status && <span className={`status-message${status.err ? ' error' : ''}`}>{status.msg}</span>}
           <span className="spacer" />
           {project && (
             <>
-              <button className="ghost" onClick={() => setShowNotes(s => !s)}>{showNotes ? 'hide notes' : 'notes'}</button>
-              <button className="ghost" onClick={() => setPresent(p => !p)}>{present ? 'exit present' : 'present (f)'}</button>
+              <button className="ghost" onClick={() => setShowNotes(s => !s)}>{showNotes ? 'Hide notes' : 'Notes'}</button>
+              <button className="primary" onClick={() => setPresent(p => !p)}>{present ? 'Exit present' : 'Present'}</button>
             </>
           )}
           <span className="dim">←/→ navigate</span>
@@ -168,12 +127,12 @@ export function Shell() {
           onDrop={async e => {
             e.preventDefault()
             e.currentTarget.classList.remove('dragover')
-            handleFiles(await filesFromDrop(e.dataTransfer.items))
+            void filesFromDrop(e.dataTransfer.items).then(handleFiles)
           }}
         >
           {project ? (
             <div className={refSrc ? 'qa-split' : undefined}>
-              <Viewer project={project} index={cur} />
+              <Viewer project={project} index={cur} onSlideChange={setCur} />
               {refSrc && (
                 <figure className="qa-ref">
                   <img src={refSrc} alt={`soffice reference, slide ${cur + 1}`} />

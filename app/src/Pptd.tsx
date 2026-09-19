@@ -59,7 +59,7 @@ export function Pptd({ source, mode = 'view', onSave: _onSave, features, classNa
   }
   return (
     <div ref={rootRef} className={`pptd${mode === 'present' ? ' pptd-present' : ''}${className ? ` ${className}` : ''}`}>
-      <Viewer project={project} index={index} onSelect={select ? selection => {
+      <Viewer project={project} index={index} onSlideChange={setIndex} onSelect={select ? selection => {
         const root = rootRef.current?.getBoundingClientRect()
         setSelection(root ? { ...selection, x: selection.x - root.left, y: selection.y - root.top } : selection)
       } : undefined} />
