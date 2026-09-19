@@ -208,6 +208,17 @@ button.ghost,
   width: 100%;
   height: 100%;
 }
+.pptd-selectable {
+  cursor: crosshair;
+}
+.pptd-selection-highlight {
+  position: absolute;
+  z-index: 10;
+  pointer-events: none;
+  border: 2px solid #ff6900;
+  background: #ff69001a;
+  box-shadow: 0 0 0 1px #fff8, 0 0 12px #ff690066;
+}
 .pptd-select-popup {
   position: absolute;
   z-index: 20;

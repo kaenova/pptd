@@ -41,12 +41,14 @@ export function PageView({ page, slide, onSelect }: { page: Page; slide: number;
   const groups = animationGroups(page.animations)
   // remount per page resets playback; group 0 auto-plays when it starts with with/afterPrevious
   const [click, setClick] = useState(() => (groups[0]?.auto ? 0 : -1))
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
   const visible = new Set<string>()
   for (let i = 0; i <= click; i++) for (const step of groups[i]?.steps ?? []) visible.add(step.elementId)
   const active = new Map<string, import('./anim').Animation>()
   for (let i = 0; i <= click; i++) for (const step of groups[i]?.steps ?? []) active.set(step.elementId, step)
   const bg = page.background ?? { type: 'solid', color: '#FFFFFF' }
   const bgOpacity = bg.type === 'image' ? bg.opacity : undefined
+  const hovered = onSelect ? page.elements.find(el => el.elementId === hoveredId) : undefined
   return (
     <div style={{ position: 'absolute', inset: 0 }} onClick={() => groups.length && setClick(c => Math.min(c + 1, groups.length - 1))}>
       <div style={{ position: 'absolute', inset: 0, ...fillStyle(bg, theme), opacity: bgOpacity }} />
@@ -55,12 +57,22 @@ export function PageView({ page, slide, onSelect }: { page: Page; slide: number;
         const hidden = groups.length > 0 && !visible.has(el.elementId) && page.animations?.some(a => a.elementId === el.elementId)
         return <div
           key={el.elementId}
+          className={onSelect ? 'pptd-selectable' : undefined}
           style={anim ? animationStyle(anim, true) : hidden ? { visibility: 'hidden' } : undefined}
+          onMouseEnter={onSelect ? () => setHoveredId(el.elementId) : undefined}
+          onMouseLeave={onSelect ? () => setHoveredId(null) : undefined}
           onClick={onSelect ? e => { e.stopPropagation(); onSelect({ slide, componentId: el.elementId, x: e.clientX, y: e.clientY }) } : undefined}
         >
           <ElementView el={el} />
         </div>
       })}
+      {hovered && (
+        <div
+          className="pptd-selection-highlight"
+          style={{ left: hovered.bounds[0], top: hovered.bounds[1], width: hovered.bounds[2], height: hovered.bounds[3] }}
+          aria-hidden="true"
+        />
+      )}
     </div>
   )
 }
