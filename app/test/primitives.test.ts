@@ -1,8 +1,12 @@
 // Phase 2 checks: rich-text parsing, theme resolution, fill/gradient CSS, style merge.
+import { describe, expect, test } from 'bun:test'
 // Run: bun test
 import { describe, expect, test } from 'bun:test'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import { parseInline, parseRichText, parseDecls } from '../src/render/RichText'
 import { fillStyle } from '../src/render/Fill'
+import { TextBlock } from '../src/render/elements/Text'
 import { resolveColor, resolveTextStyle, themeCtx, textDefaults } from '../src/theme'
 import type { Theme } from '../src/types'
 
@@ -64,6 +68,37 @@ describe('fillStyle', () => {
     expect(fillStyle({ type: 'gradient', gradientType: 'linear', angle: 90, stops }, theme).background).toBe(
       'linear-gradient(180deg, #000 0%, #fff 100%)',
     )
+  })
+
+  test('gradient: radial + default angle + fractional stops', () => {
+    const stops = [
+      { position: 0, color: '#F00' },
+      { position: 0.5, color: '#0F0' },
+      { position: 1, color: '#00F' },
+    ]
+    expect(fillStyle({ type: 'gradient', gradientType: 'radial', stops }, theme).background).toBe(
+      'radial-gradient(#F00 0%, #0F0 50%, #00F 100%)',
+    )
+    // missing angle defaults to spec 0 (left→right) = css 90deg
+    expect(fillStyle({ type: 'gradient', gradientType: 'linear', stops }, theme).background).toBe(
+      'linear-gradient(90deg, #F00 0%, #0F0 50%, #00F 100%)',
+    )
+  })
+
+  test('text gradient: glyphs transparent at every level (regression: inner RichText re-set color)', () => {
+    const el = {
+      elementId: 't', elementType: 'text' as const, bounds: [0, 0, 100, 40],
+      content: {
+        fontSize: 24,
+        text: 'G',
+        gradient: { type: 'gradient' as const, gradientType: 'linear' as const, angle: 45, stops: [{ position: 0, color: '#F00' }, { position: 1, color: '#00F' }] },
+      },
+    }
+    const html = renderToStaticMarkup(createElement(TextBlock, el))
+    // container clips the gradient to glyphs
+    expect(html).toContain('background-clip:text')
+    // inner rich-text root must not re-set an opaque color over it
+    expect(html).not.toMatch(/color:(?!transparent)[^;"]+/)
   })
 
   test('image fill default mode cover', () => {

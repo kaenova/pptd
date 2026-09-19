@@ -35,7 +35,7 @@ export function TextBlock(el: TextElement) {
   }
   return (
     <div className="el" data-id={el.elementId} style={style}>
-      <RichText content={c} />
+      <RichText content={c} base={c.gradient ? { color: 'transparent' } : undefined} />
     </div>
   )
 }
