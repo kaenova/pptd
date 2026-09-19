@@ -1,7 +1,12 @@
 version: v2
-title: Phase 3 Torture
+title: Element Torture
 size: [960, 540]
+theme:
+  colors:
+    $accent: "#E91E63"
+    $primary: "#24C"
 pages:
   - pages/01_shapes.page
   - pages/02_lines.page
   - pages/03_image_icon.page
+  - pages/04_table.page

@@ -1,6 +1,71 @@
 // PPTD v2 format types — subset needed for rendering. Spec: skills/cowork-ppt/reference/pptd.md
 // ponytail: extend per phase, don't spec-dump. Phase 2 adds Border/Shadow/fontFamily/theme/customFonts.
 
+// ---------- Table (Phase 4) ----------
+
+export interface CellStyle {
+  color?: Color
+  fontSize?: number
+  fontFamily?: FontFamily
+  bold?: boolean
+  italic?: boolean
+  backgroundColor?: Color
+  lineHeight?: number
+  lineHeightPx?: number
+  letterSpacing?: number
+  marginTop?: number
+  fill?: Fill
+  border?: BorderSpec
+  align?: Alignment
+}
+
+export interface TableStyleConfig {
+  cellStyle?: CellStyle
+  firstRowStyle?: CellStyle
+  lastRowStyle?: CellStyle
+  firstColumnStyle?: CellStyle
+  lastColumnStyle?: CellStyle
+  bodyStyles?: CellStyle[]
+  rowOverColumn?: boolean
+}
+
+/** null clears all four sides; [tb, lr]; [t, r, b, l] clockwise */
+export type BorderSpec = null | Border | [Border | null, Border | null] | [Border | null, Border | null, Border | null, Border | null]
+
+export type Alignment = [string, string] // [horizontal, vertical]
+
+/** dji-deck legacy cell shape: {content: {text, align}} — normalized to text/align */
+export interface Cell {
+  text?: string
+  content?: { text?: string; align?: Alignment }
+  textStyle?: string
+  color?: Color
+  fontSize?: number
+  fontFamily?: FontFamily
+  bold?: boolean
+  italic?: boolean
+  backgroundColor?: Color
+  lineHeight?: number
+  lineHeightPx?: number
+  letterSpacing?: number
+  marginTop?: number
+  fill?: Fill
+  border?: BorderSpec
+  align?: Alignment
+  rowSpan?: number
+  colSpan?: number
+}
+
+export interface TableElement extends ElementBase {
+  elementType: 'table'
+  columnWidths: number[]
+  rowHeights: number[]
+  rows: Cell[][]
+  style?: string | TableStyleConfig
+  fill?: Fill
+  shadow?: Shadow
+}
+
 /** "#RRGGBB" | "#RRGGBBAA" | "$themeRef" */
 export type Color = string
 
@@ -130,7 +195,7 @@ export interface IconElement extends ElementBase {
   shadow?: Shadow
 }
 
-export type Element = TextElement | ShapeElement | LineElement | ImageElement | IconElement | ChartElement
+export type Element = TextElement | ShapeElement | LineElement | ImageElement | IconElement | TableElement | ChartElement
 
 export interface Page {
   pageType?: string

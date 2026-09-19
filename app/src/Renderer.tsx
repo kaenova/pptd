@@ -8,6 +8,7 @@ import { ShapeBox } from './render/elements/Shape'
 import { LineBox } from './render/elements/Line'
 import { ImageBox } from './render/elements/Image'
 import { IconBox } from './render/elements/Icon'
+import { TableBox } from './render/elements/Table'
 
 function chartPlaceholder(el: Element & { elementType: 'chart' }) {
   const [x, y, w, h] = el.bounds
@@ -34,6 +35,8 @@ export function ElementView({ el }: { el: Element }) {
       return <ImageBox {...el} />
     case 'icon':
       return <IconBox {...el} />
+    case 'table':
+      return <TableBox el={el} />
     case 'chart':
       return chartPlaceholder(el)
     default:

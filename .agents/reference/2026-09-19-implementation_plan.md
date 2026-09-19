@@ -72,8 +72,16 @@ Implementation Handover Notes (Phase 3 — DONE):
 - `Table.tsx` — CSS grid, `rowSpan/colSpan` with omitted-cell rule, `columnWidths/rowHeights` ratios, cell fills/borders, `firstRow/lastRow/firstCol/lastCol` style overrides, `$tableStyles`
 - **Exit check:** spec's merged-cell example renders correct 3×3
 
-Implementation Handover Notes:
-...
+Implementation Handover Notes (Phase 4 — DONE):
+- **Built:** `render/elements/Table.tsx` (+ `CellStyle/TableStyleConfig/BorderSpec/Cell/TableElement` in types.ts; `Element` union extended). Absolute-positioned cells over ratio-computed col/row offsets — no CSS grid (grid+rowSpan conflicts with explicit ratio sizing; absolute needs no gap-collapse logic).
+- **Pure logic exported for tests:** `buildGrid` (omitted-cell walk, dji `content:{text,align}` normalization), `resolveCellStyle`/`resolveCellBorders` (chain mirrors `scripts/pptd_utils/tables.py` exactly: cell > textStyle-theme > category(rowOverColumn) > bodyStyles(cycled by data-row idx) > cellStyle; table fill only under cell fill; per-side border chain with explicit-null clears, UNSET sentinel distinguishes absent from null). 7 new tests; 39 total.
+- **Defaults:** fontSize 14, align center/middle, all four borders solid 1px black — matches converter CELL_DEFAULTS.
+- **Cell text = RichText** (rich tags work in cells); container flex column + justifyContent = align[1]; textAlign = align[0].
+- **Legacy quirks supported (ponytail: drop when dji deck regenerates on spec v2):** (1) `content:{text,align}` cell wrapper; (2) table style convenience keys `fontSize/bodyColor/headerBold/firstColumnColor/border` — mapped to cellStyle + firstRow(firstColumn) categories; headerBold only touches row 0, firstColumnColor only col 0; (3) 3-element BorderSpec `[t, lr, b]` (spec only defines 2/4 forms).
+- **Null-border semantics:** `null` side = no border (component skips); only fully-unspecified side defaults to solid 1px black.
+- **Torture page 4:** spec's `table-merged` example verbatim (2×2 merge, omitted cells) + a styled table (firstRow fill/bold/align, bodyStyles band, per-cell align override). Exit check verified in browser — merged region spans cols 0–1 rows 0–1, no phantom cells.
+- Verified: dji-pocket4 page 17 (real legacy table), all 4 decks zero page errors. tsc/oxlint clean, build 89.2 gzip.
+- Known gaps (deliberate): image fills in cells (needs object-fit layer); table shadow applies to wrapper only.
 
 ## Phase 5 — Charts (biggest phase)
 - `src/render/elements/Chart.tsx` — ECharts wrapper, resize-aware
@@ -111,7 +119,7 @@ Progress Tracker
 - [x] Phase 1 — DONE (Vite+React scaffold, FileSource loader, upload/drop/example-deck, thumb rail, scale-to-fit canvas, 5 smoke tests green)
 - [x] Phase 2 — DONE (theme ctx + $ref resolution, Fill/Border/Shadow primitives, RichText parser+renderer, customFonts injection, 18 tests green, yu7 slides verified in browser)
 - [x] Phase 3 — DONE (Shape/Line/Image/Icon/Text element components, 20 shape presets + custom paths, arrows + curve lines, crop→fit→cropShape, FA icons via CDN, 32 tests, all example decks + torture deck verified in browser)
-- [ ] Phase 4
+- [x] Phase 4 — DONE (Table.tsx: omitted-cell grid walk, full style chain mirroring converter, per-side BorderSpec chain, dji legacy compat, 39 tests, spec merged-cell example + dji real table verified)
 - [ ] Phase 5
 - [ ] Phase 6
 - [ ] Phase 7

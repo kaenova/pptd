@@ -90,3 +90,71 @@ describe('element frame transform', () => {
     expect(fx({})).toEqual({ transform: 'rotate(0deg) scaleX(1) scaleY(1)', opacity: undefined })
   })
 })
+
+describe('table grid', () => {
+  const { buildGrid } = require('../src/render/elements/Table') as typeof import('../src/render/elements/Table')
+
+  test('spec merged-cell example: 2×2 merge + omitted cells', () => {
+    // rows array from spec table-merged example
+    const rows = [
+      [{ text: 'Merged cell', rowSpan: 2, colSpan: 2 }, { text: 'C1' }],
+      [{ text: 'C2' }],
+      [{ text: 'A3' }, { text: 'B3' }, { text: 'C3' }],
+    ]
+    const g = buildGrid(rows)
+    expect(g.nrows).toBe(3)
+    expect(g.ncols).toBe(3)
+    expect(g.cells.map((c) => [c.r, c.c])).toEqual([
+      [0, 0],
+      [0, 2],
+      [1, 2],
+      [2, 0],
+      [2, 1],
+      [2, 2],
+    ])
+  })
+
+  test('dji legacy content:{text,align} normalizes', () => {
+    const g = buildGrid([[{ content: { text: 'x', align: ['left', 'middle'] } } as never]])
+    expect(g.cells[0].cell.text).toBe('x')
+    expect(g.cells[0].cell.align).toEqual(['left', 'middle'])
+  })
+})
+
+describe('table style chain', () => {
+  const { resolveCellStyle } = require('../src/render/elements/Table') as typeof import('../src/render/elements/Table')
+  const empty = { colors: {}, textStyles: {}, tableStyles: {} }
+
+  test('defaults: fontSize 14, centered, black solid borders on all sides', () => {
+    const { flat, borders } = resolveCellStyle(0, 0, 2, 2, {}, {}, empty, undefined)
+    expect(flat.fontSize).toBe(14)
+    expect(flat.align).toEqual(['center', 'middle'])
+    expect(borders).toEqual({ t: { style: 'solid', width: 1, color: '#000000' }, r: { style: 'solid', width: 1, color: '#000000' }, b: { style: 'solid', width: 1, color: '#000000' }, l: { style: 'solid', width: 1, color: '#000000' } })
+  })
+
+  test('priority: cell > firstRow > bodyStyles > cellStyle; table fill under cell fill', () => {
+    const cfg = {
+      cellStyle: { color: '#111111', fill: { type: 'solid', color: '#cfill' } },
+      firstRowStyle: { color: '#222222', bold: true },
+      bodyStyles: [{ fill: { type: 'solid', color: '#body' } }],
+    }
+    const head = resolveCellStyle(0, 0, 3, 2, cfg, { color: '#333333' }, empty, undefined)
+    expect(head.flat.color).toBe('#333333')
+    expect(head.flat.bold).toBe(true)
+    const body = resolveCellStyle(1, 0, 3, 2, cfg, {}, empty, undefined)
+    expect(body.flat.color).toBe('#111111')
+    expect((body.flat.fill as { color: string }).color).toBe('#body')
+    const filled = resolveCellStyle(1, 0, 3, 2, cfg, { fill: { type: 'solid', color: '#cell' } }, empty, undefined)
+    expect((filled.flat.fill as { color: string }).color).toBe('#cell')
+  })
+
+  test('border per-side chain: explicit null clears cellStyle border (dji [null, line, null])', () => {
+    const line = { style: 'solid', width: 0.75, color: '$line' }
+    const cfg = { cellStyle: { border: [null, line, null] as never } }
+    const { borders } = resolveCellStyle(0, 0, 2, 2, cfg, {}, empty, undefined)
+    expect(borders.t).toBeNull()
+    expect(borders.b).toBeNull()
+    expect(borders.l).toEqual(line)
+    expect(borders.r).toEqual(line)
+  })
+})

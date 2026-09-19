@@ -1,6 +1,8 @@
 [
- "torture.pptd",
- "pages/01_shapes.page",
- "pages/02_lines.page",
- "pages/03_image_icon.page"
+"media/blocks.svg",
+"pages/01_shapes.page",
+"pages/02_lines.page",
+"pages/03_image_icon.page",
+"pages/04_table.page",
+"torture.pptd"
 ]

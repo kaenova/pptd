@@ -1,0 +1,50 @@
+pageType: content
+background:
+  type: solid
+  color: "#FFFFFF"
+elements:
+  # spec's table-merged example verbatim (Phase 4 exit check)
+  - elementId: table-merged
+    elementType: table
+    bounds: [100, 60, 600, 300]
+    columnWidths: [0.33, 0.33, 0.34]
+    rowHeights: [0.33, 0.33, 0.34]
+    rows:
+      # Row 0: top-left 2×2 merge + C1. The merged (0,1) is omitted
+      - - text: "Merged cell"
+          fill: {type: solid, color: "$accent"}
+          rowSpan: 2
+          colSpan: 2
+        - text: "C1"
+      # Row 1: (1,0) and (1,1) are occupied by the merge → only C2 remains
+      - - text: "C2"
+      # Row 2: full three columns
+      - - text: "A3"
+        - text: "B3"
+        - text: "C3"
+  # styled variant: theme ref + category overrides + rich text cell
+  - elementId: table-styled
+    elementType: table
+    bounds: [100, 400, 760, 110]
+    columnWidths: [0.25, 0.45, 0.3]
+    rowHeights: [0.5, 0.5]
+    style:
+      cellStyle:
+        fontSize: 13
+        color: "#333333"
+        align: ["left", "middle"]
+      firstRowStyle:
+        bold: true
+        fill: {type: solid, color: "$primary"}
+        color: "#FFFFFF"
+        align: ["center", "middle"]
+      bodyStyles:
+        - fill: {type: solid, color: "#F5F5F5"}
+    rows:
+      - - text: "Metric"
+        - text: "2023"
+        - text: "2024"
+      - - text: "Revenue (100M CNY)"
+          align: ["right", "middle"]
+        - text: "82.5"
+        - text: "96.3"
