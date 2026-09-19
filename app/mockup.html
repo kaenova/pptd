@@ -1,0 +1,348 @@
+<!doctype html>
+<!-- ponytail: throwaway mockup of planned /app viewer. CDN deps, no server.
+     Real app: Vite+React, same loader logic in load.ts. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>/app mockup — PPTD Viewer plan preview</title>
+<script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+  :root { --bg:#0d1117; --panel:#161b22; --line:#30363d; --fg:#e6edf3; --dim:#8b949e; --accent:#FF6900; }
+  * { box-sizing:border-box; margin:0 }
+  body { background:var(--bg); color:var(--fg); font:14px/1.4 ui-sans-serif,system-ui; display:flex; height:100vh }
+
+  /* ===== left: thumbnail rail ===== */
+  #rail { width:130px; background:var(--panel); border-right:1px solid var(--line); padding:10px 8px; overflow-y:auto; flex:none }
+  #rail h1 { font-size:11px; color:var(--dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px }
+  .thumb { width:112px; border:1px solid var(--line); border-radius:4px; margin-bottom:8px; position:relative; overflow:hidden; cursor:pointer; background:#fff }
+  .thumb.active { outline:2px solid var(--accent) }
+  .thumb .mini { position:absolute; transform-origin:top left; pointer-events:none }
+  .thumb .ph { display:flex; align-items:center; justify-content:center; height:64px; color:#9aa; font-size:10px; text-align:center }
+  .thumb .no { position:absolute; right:3px; bottom:2px; font-size:9px; color:#555; z-index:2 }
+  #railEmpty { color:var(--dim); font-size:11px; line-height:1.6 }
+
+  /* ===== center: canvas ===== */
+  #main { flex:1; display:flex; flex-direction:column; min-width:0 }
+  #bar { padding:8px 14px; border-bottom:1px solid var(--line); display:flex; gap:14px; align-items:center; color:var(--dim); font-size:12px; flex-wrap:wrap }
+  #bar b { color:var(--fg) }
+  #bar label { cursor:pointer; user-select:none }
+  button { background:var(--accent); color:#000; border:0; border-radius:5px; padding:5px 12px; font-weight:600; font-size:12px; cursor:pointer }
+  button.ghost { background:transparent; color:var(--fg); border:1px solid var(--line) }
+  #stage { flex:1; display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative }
+  #stage.dragover::after { content:'drop .pptd folder'; position:absolute; inset:14px; border:2px dashed var(--accent); border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--accent); font-size:18px; background:#0d1117cc }
+  #canvasWrap { position:relative; transform-origin:center center; background:#fff; box-shadow:0 8px 40px #000a }
+  #devinfo { position:absolute; top:10px; left:10px; background:#000c; padding:6px 10px; border-radius:4px; font:11px ui-monospace,monospace; color:#0f0; display:none; z-index:10; pointer-events:none }
+  #empty { color:var(--dim); text-align:center; max-width:420px }
+  #empty code { color:var(--fg) }
+  .el.outline { outline:1px dashed #f0f }
+
+  /* ===== right: notes ===== */
+  #notes { width:250px; background:var(--panel); border-left:1px solid var(--line); padding:14px; overflow-y:auto; font-size:12.5px; flex:none }
+  #notes h2 { font-size:12px; color:var(--accent); text-transform:uppercase; letter-spacing:1px; margin:14px 0 6px }
+  #notes h2:first-child { margin-top:0 }
+  #notes p, #notes li { color:var(--dim) }
+  #notes code { color:var(--fg); font-size:11.5px }
+</style>
+</head>
+<body>
+
+<div id="rail">
+  <h1>Slides</h1>
+  <div id="thumbs"></div>
+  <div id="railEmpty">upload a folder to fill this rail</div>
+</div>
+
+<div id="main">
+  <div id="bar">
+    <button id="btnUpload">📁 Upload .pptd folder</button>
+    <input type="file" id="fileInput" webkitdirectory multiple hidden>
+    <button class="ghost" id="btnDemo">load demo</button>
+    <b id="title">PPTD Viewer</b>
+    <span id="pageinfo"></span>
+    <span id="status" style="color:#f85"></span>
+    <span style="flex:1"></span>
+    <label><input type="checkbox" id="outline" checked> element outlines (dev)</label>
+    <span>←/→ navigate</span>
+  </div>
+  <div id="stage">
+    <div id="canvasWrap" style="display:none"><div id="devinfo"></div></div>
+    <div id="empty">
+      <p><b>Drop a PPTD project folder here</b></p>
+      <p style="margin-top:8px">expected layout:</p>
+      <p><code>my_deck.pptd<br>pages/*.page<br>media/*</code></p>
+      <p style="margin-top:8px">all paths self-contained (spec rule), relative to the .pptd file.<br>try <code>skills/cowork-ppt/example/yu7-ppt</code></p>
+    </div>
+  </div>
+</div>
+
+<div id="notes">
+  <h2>What you're seeing</h2>
+  <p>Shell = planned <code>/app</code> viewer. Upload reads the <b>real folder</b>: parses <code>.pptd</code>, loads each <code>pages/*.page</code>, maps <code>media/</code> refs to blob URLs — same flow as the React <code>load.ts</code>.</p>
+
+  <h2>Upload contract</h2>
+  <ul>
+    <li><code>&lt;input webkitdirectory&gt;</code> = folder pick; drag-drop via <code>webkitGetAsEntry</code> recursion</li>
+    <li>find <code>*.pptd</code> at folder root → <code>pages[]</code> list is the slide order</li>
+    <li>media: <code>URL.createObjectURL</code>, paths resolved relative to .pptd dir</li>
+    <li>no server, no zip — browser-only</li>
+  </ul>
+
+  <h2>Chart preview</h2>
+  <p>Demo slide 2 = pptd <code>chart</code> element → ECharts (phase 5).</p>
+
+  <h2>Not in mockup</h2>
+  <p>RichText tags, tables, FA icons, custom shapes, animations. Rejected: File System Access API (<code>showDirectoryPicker</code>) — no Firefox/Safari fallback; <code>webkitdirectory</code> covers all.</p>
+</div>
+
+<script>
+/* ================= loader: folder -> {title,size,pages} ================= */
+
+const IMG_RE = /\.(jpe?g|png|gif|webp|svg)$/i;
+
+function stripRoot(files) { // webkitRelativePath: "yu7-ppt/pages/x.page" -> strip first seg
+  const out = {};
+  let root = null;
+  for (const f of files) {
+    const rel = f.webkitRelativePath || f.name;
+    if (root === null) root = rel.includes('/') ? rel.slice(0, rel.indexOf('/') + 1) : '';
+    out[rel.startsWith(root) ? rel.slice(root.length) : rel] = f;
+  }
+  return out;
+}
+
+// resolve every "src" that isn't an http URL: background fills, image elements, image fills
+function resolveSrc(obj, base, urls) {
+  if (Array.isArray(obj)) { obj.forEach(o => resolveSrc(o, base, urls)); return obj; }
+  if (obj && typeof obj === 'object') {
+    if (typeof obj.src === 'string' && !obj.src.startsWith('http')) obj.src = urls[base + obj.src] || obj.src;
+    for (const v of Object.values(obj)) resolveSrc(v, base, urls);
+  }
+  return obj;
+}
+
+async function loadProject(fileList) {
+  const files = stripRoot(fileList);
+  const pptdName = Object.keys(files).find(p => p.endsWith('.pptd') && !p.includes('/'));
+  if (!pptdName) throw new Error('no .pptd file at folder root');
+  const pptd = jsyaml.load(await files[pptdName].text());
+  const base = pptdName.replace(/[^/]+$/, '');
+  const urls = {};
+  for (const [p, f] of Object.entries(files)) if (IMG_RE.test(p)) urls[p] = URL.createObjectURL(f);
+  const pages = [];
+  for (const rel of pptd.pages) {
+    const key = base + rel;
+    if (!files[key]) throw new Error('missing page file: ' + rel);
+    pages.push(resolveSrc(jsyaml.load(await files[key].text()), base, urls));
+  }
+  return { title: pptd.title || pptdName, size: pptd.size || [960, 540], pages };
+}
+
+// drag-drop: recursive directory read (readEntries returns max 100 per call)
+async function filesFromDrop(items) {
+  const files = [];
+  const walk = async entry => {
+    if (entry.isFile) {
+      const f = await new Promise((res, rej) => entry.file(res, rej));
+      Object.defineProperty(f, 'webkitRelativePath', { value: entry.fullPath.slice(1) });
+      files.push(f);
+    } else if (entry.isDirectory) {
+      const reader = entry.createReader();
+      for (;;) {
+        const batch = await new Promise((res, rej) => reader.readEntries(res, rej));
+        if (!batch.length) break;
+        for (const e of batch) await walk(e);
+      }
+    }
+  };
+  const entries = [...items].map(i => i.webkitGetAsEntry && i.webkitGetAsEntry()).filter(Boolean);
+  if (entries.length) { for (const e of entries) await walk(e); return files; }
+  return [...items].map(i => i.getAsFile()).filter(Boolean);
+}
+
+/* ================= renderer (same logic planned for the app) ================= */
+
+function elPos(b) { const [x,y,w,h] = b; return `left:${x}px;top:${y}px;width:${w}px;height:${h}px;`; }
+
+function renderFill(f) {
+  if (!f) return '';
+  if (f.type === 'solid') return `background:${f.color};`;
+  if (f.type === 'gradient') {
+    const stops = f.stops.map(s => `${s.color} ${(s.position*100)|0}%`).join(',');
+    return `background:linear-gradient(${180 - (f.angle||0)}deg, ${stops});`;
+  }
+  if (f.type === 'image') return `background:url('${f.src}') center/${f.fit?.mode === 'contain' ? 'contain' : 'cover'} no-repeat;`;
+  return '';
+}
+
+function renderElement(el) {
+  const common = `position:absolute;${elPos(el.bounds)}`;
+  switch (el.elementType) {
+    case 'shape':
+      return `<div class="el" data-id="${el.elementId}" style="${common};${renderFill(el.fill)}${el.shapeName==='roundRect'?`border-radius:16px`:''}"></div>`;
+    case 'text': {
+      const c = el.content, [ha, va] = c.align || [];
+      const style = [
+        'position:absolute', 'white-space:pre-wrap', elPos(el.bounds),
+        `font-size:${c.fontSize ?? 18}px`, `color:${c.color || '#000'}`,
+        c.bold ? 'font-weight:700' : '', c.italic ? 'font-style:italic' : '',
+        c.letterSpacing ? `letter-spacing:${c.letterSpacing}px` : '',
+        c.lineHeight ? `line-height:${c.lineHeight}` : '',
+        ha === 'center' ? 'text-align:center' : ha === 'right' ? 'text-align:right' : '',
+        va === 'middle' ? 'display:flex;align-items:center' : '', 'overflow:hidden',
+      ].filter(Boolean).join(';');
+      const html = String(c.text).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+      return `<div class="el" data-id="${el.elementId}" style="${style}">${html}</div>`;
+    }
+    case 'line': {
+      const pts = el.points.split(' ').map(p => p.split(',').map(Number));
+      const [x1,y1] = pts[0], [x2,y2] = pts[pts.length-1], b = el.border || {};
+      return `<svg class="el" data-id="${el.elementId}" style="${common}" viewBox="0 0 ${el.bounds[2]} ${el.bounds[3]}" preserveAspectRatio="none">
+        <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${b.color||'#000'}" stroke-width="${b.width||1}"/></svg>`;
+    }
+    case 'image':
+      return `<img class="el" data-id="${el.elementId}" src="${el.src}" style="${common};object-fit:${el.fit?.mode||'cover'}">`;
+    case 'icon':
+      return `<div class="el" data-id="${el.elementId}" style="${common};display:flex;align-items:center;justify-content:center;font-size:${Math.min(el.bounds[2],el.bounds[3])}px">💡</div>`;
+    case 'table':
+      return `<div class="el" data-id="${el.elementId}" style="${common};border:1px dashed #bbb;display:flex;align-items:center;justify-content:center;color:#999">table (phase 4)</div>`;
+    case 'chart':
+      return `<div class="el" data-id="${el.elementId}" id="chart-${el.elementId}" style="${common}"></div>`;
+    default: return '';
+  }
+}
+
+function renderPage(page, mount) {
+  mount.querySelectorAll('#chart-mount-echarts').forEach(n => n.remove()); // echarts instances die with innerHTML
+  mount.innerHTML = '';
+  mount.insertAdjacentHTML('beforeend', `<div style="position:absolute;inset:0;${renderFill(page.background)}"></div>`);
+  for (const el of page.elements) mount.insertAdjacentHTML('beforeend', renderElement(el));
+  for (const el of page.elements.filter(e => e.elementType === 'chart')) {
+    const div = document.getElementById('chart-' + el.elementId);
+    const chart = echarts.init(div);
+    chart.setOption({
+      grid: {left: 50, right: 20, top: 30, bottom: 30},
+      xAxis: {type: 'category', data: el.data.categories, axisLabel: {color: '#fff'}},
+      yAxis: {type: 'value', splitLine: {lineStyle: {color: '#333'}}},
+      series: el.series.map(s => ({
+        type: s.type, data: el.data.series[s.dataKey],
+        itemStyle: s.fill ? {color: s.fill.color} : {},
+        label: s.dataLabel?.show ? {show: true, position: s.dataLabel.position, color: '#fff'} : undefined,
+      })),
+    });
+  }
+}
+
+/* ================= shell: state, rail, nav, dev overlay ================= */
+
+let state = { title: '', size: [960, 540], pages: [] };
+let cur = 0;
+const wrap = document.getElementById('canvasWrap');
+const thumbs = document.getElementById('thumbs');
+const stage = document.getElementById('stage');
+
+function buildRail() {
+  thumbs.innerHTML = '';
+  document.getElementById('railEmpty').style.display = state.pages.length ? 'none' : '';
+  state.pages.forEach((_, i) => {
+    const t = document.createElement('div');
+    t.className = 'thumb' + (i === cur ? ' active' : '');
+    const [w, h] = state.size, s = 112 / w;
+    t.style.height = (h * s) + 'px';
+    t.innerHTML = `<div class="mini" style="width:${w}px;height:${h}px;transform:scale(${s})"></div><span class="no">${i + 1}</span>`;
+    t.onclick = () => go(i);
+    thumbs.appendChild(t);
+    renderPage(state.pages[i], t.querySelector('.mini'));
+  });
+}
+
+function go(i) {
+  if (!state.pages.length) return;
+  cur = Math.max(0, Math.min(state.pages.length - 1, i));
+  [...thumbs.children].forEach((t, j) => t.classList.toggle('active', j === cur));
+  renderPage(state.pages[cur], wrap);
+  document.getElementById('pageinfo').textContent = `slide ${cur + 1} / ${state.pages.length}`;
+  document.getElementById('outline').dispatchEvent(new Event('change'));
+}
+
+function showProject(proj) {
+  state = proj; cur = 0;
+  const [w, h] = state.size;
+  wrap.style.width = w + 'px'; wrap.style.height = h + 'px';
+  wrap.style.display = '';
+  document.getElementById('empty').style.display = 'none';
+  document.getElementById('title').textContent = state.title;
+  buildRail(); go(0); fit();
+}
+
+function setStatus(msg, err = true) {
+  const s = document.getElementById('status');
+  s.textContent = msg; s.style.color = err ? '#f85' : '#7ee787';
+  if (msg) setTimeout(() => { if (s.textContent === msg) s.textContent = ''; }, 4000);
+}
+
+async function handleFiles(fileList) {
+  try {
+    setStatus('loading…', false);
+    showProject(await loadProject(fileList));
+    setStatus('', false);
+  } catch (e) { setStatus(e.message); }
+}
+
+document.getElementById('btnUpload').onclick = () => document.getElementById('fileInput').click();
+document.getElementById('fileInput').onchange = e => handleFiles(e.target.files);
+
+stage.addEventListener('dragover', e => { e.preventDefault(); stage.classList.add('dragover'); });
+stage.addEventListener('dragleave', () => stage.classList.remove('dragover'));
+stage.addEventListener('drop', async e => {
+  e.preventDefault(); stage.classList.remove('dragover');
+  handleFiles(await filesFromDrop(e.dataTransfer.items));
+});
+
+function fit() {
+  if (wrap.style.display === 'none') return;
+  const [w, h] = state.size;
+  const s = Math.min((stage.clientWidth - 30) / w, (stage.clientHeight - 30) / h, 1.5);
+  wrap.style.transform = `scale(${s})`;
+}
+addEventListener('resize', fit);
+addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') go(cur + 1);
+  if (e.key === 'ArrowLeft') go(cur - 1);
+});
+
+// dev overlay: hover shows elementType · elementId · bounds
+const dev = document.getElementById('devinfo');
+wrap.addEventListener('mousemove', e => {
+  const el = e.target.closest('.el');
+  const def = el && state.pages[cur]?.elements.find(x => x.elementId === el.dataset.id);
+  if (!def) { dev.style.display = 'none'; return; }
+  dev.style.display = 'block';
+  dev.textContent = `${def.elementType} · ${def.elementId} · bounds:[${def.bounds.join(', ')}]`;
+});
+wrap.addEventListener('mouseleave', () => dev.style.display = 'none');
+document.getElementById('outline').onchange = e => {
+  wrap.querySelectorAll('.el').forEach(el => el.classList.toggle('outline', e.target.checked));
+};
+
+/* ================= demo deck (synthetic, until you upload yu7-ppt) ================= */
+
+document.getElementById('btnDemo').onclick = () => {
+  showProject({ title: 'Demo deck', size: [960, 540], pages: [
+    { background: {type:'solid', color:'#0E1116'}, elements: [
+      { elementId:'kicker', elementType:'text', bounds:[60,50,400,24], content:{ fontSize:12, color:'#FF6900', bold:true, letterSpacing:4, text:'DEMO · no upload needed' } },
+      { elementId:'headline', elementType:'text', bounds:[60,84,840,90], content:{ fontSize:44, color:'#FFFFFF', bold:true, text:'Upload a real deck →' } },
+      { elementId:'hint', elementType:'text', bounds:[60,190,700,60], content:{ fontSize:15, color:'#FFFFFFB3', lineHeight:1.7, text:'📁 Upload .pptd folder, or drop skills/cowork-ppt/example/yu7-ppt here.\nThe loader follows spec rules: .pptd entry → pages[] → media relative paths.' } },
+    ]},
+    { background: {type:'solid', color:'#0E1116'}, elements: [
+      { elementId:'kicker', elementType:'text', bounds:[60,50,400,24], content:{ fontSize:12, color:'#FF6900', bold:true, letterSpacing:4, text:'PHASE 5 PREVIEW · CHART ELEMENT' } },
+      { elementId:'headline', elementType:'text', bounds:[60,84,840,60], content:{ fontSize:34, color:'#FFFFFF', bold:true, text:'0-100 km/h acceleration (s)' } },
+      { elementId:'chart-1', elementType:'chart', bounds:[60,170,840,320],
+        data: { categories:['SU7 Ultra','YU7 Max','Model Y P','Taycan 4S'], series: { s1:[2.78,3.23,3.7,4.0] } },
+        series: [ { type:'bar', dataKey:'s1', fill:{type:'solid', color:'#FF6900'}, dataLabel:{show:true, position:'top'} } ] },
+    ]},
+  ]});
+};
+</script>
+</body>
+</html>

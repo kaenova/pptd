@@ -1,0 +1,159 @@
+:root {
+  --bg: #0d1117;
+  --panel: #161b22;
+  --line: #30363d;
+  --fg: #e6edf3;
+  --dim: #8b949e;
+  --accent: #ff6900;
+}
+* {
+  box-sizing: border-box;
+  margin: 0;
+}
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font: 14px/1.4 ui-sans-serif, system-ui, sans-serif;
+}
+#root,
+.shell {
+  height: 100vh;
+}
+.shell {
+  display: flex;
+}
+
+/* ---- rail ---- */
+.rail {
+  width: 130px;
+  flex: none;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  padding: 10px 8px;
+  overflow-y: auto;
+}
+.rail h1 {
+  font-size: 11px;
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+.thumbs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.thumb {
+  width: 112px;
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+  background: #fff;
+}
+.thumb.active {
+  outline: 2px solid var(--accent);
+}
+.thumb .no {
+  position: absolute;
+  right: 3px;
+  bottom: 2px;
+  font-size: 9px;
+  color: #555;
+  z-index: 2;
+}
+.hint {
+  color: var(--dim);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+/* ---- main ---- */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.bar {
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  color: var(--dim);
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+.bar b {
+  color: var(--fg);
+}
+.bar .spacer {
+  flex: 1;
+}
+.btn {
+  background: var(--accent);
+  color: #000;
+  border-radius: 5px;
+  padding: 5px 12px;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+}
+button.ghost,
+.bar button {
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.dim {
+  color: var(--dim);
+}
+
+/* ---- stage ---- */
+.stage-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+.stage-wrap.dragover::after {
+  content: 'drop .pptd folder';
+  position: absolute;
+  inset: 14px;
+  border: 2px dashed var(--accent);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  font-size: 18px;
+  background: #0d1117cc;
+  z-index: 5;
+}
+.stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.empty {
+  color: var(--dim);
+  text-align: center;
+  line-height: 1.8;
+}
+.empty code {
+  color: var(--fg);
+}
+.el {
+  position: absolute;
+}

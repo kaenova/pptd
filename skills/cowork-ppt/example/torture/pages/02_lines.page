@@ -1,0 +1,7 @@
+background: {type: solid, color: "#FFFFFF"}
+elements:
+  - {elementId: l1, elementType: line, bounds: [60, 80, 840, 2], viewBox: [840, 2], points: "0,1 840,1", border: {style: solid, width: 2, color: "#FF6900"}}
+  - {elementId: l2, elementType: line, bounds: [60, 140, 840, 160], viewBox: [840, 160], points: "0,140 280,20 560,140 840,20", curve: smooth, border: {style: solid, width: 3, color: "#06C"}}
+  - {elementId: l3, elementType: line, bounds: [60, 340, 400, 120], viewBox: [400, 120], points: "0,100 130,10 260,110 400,10", curve: sharp, border: {style: dash, width: 2, color: "#393"}, arrow: [null, "arrow"]}
+  - {elementId: l4, elementType: line, bounds: [520, 340, 380, 120], viewBox: [380, 120], points: "0,60 380,60", border: {style: solid, width: 6, color: "#E11"}, arrow: ["stealth", "diamond"]}
+  - {elementId: l5, elementType: line, bounds: [60, 470, 840, 40], viewBox: [840, 40], points: "0,20 840,20", border: {style: dot, width: 4, color: "#888"}, arrow: [null, "oval"]}

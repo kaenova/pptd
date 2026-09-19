@@ -1,0 +1,10 @@
+background: {type: solid, color: "#FFFFFF"}
+elements:
+  - {elementId: img-plain, elementType: image, bounds: [40, 40, 280, 180], src: "media/blocks.svg"}
+  - {elementId: img-crop, elementType: image, bounds: [360, 40, 280, 180], src: "media/blocks.svg", crop: {left: 0.35, right: 0.05}, fit: {mode: cover}}
+  - {elementId: img-round, elementType: image, bounds: [680, 40, 240, 180], src: "media/blocks.svg", cropShape: {shapeName: roundRect, adjustments: [25000]}}
+  - {elementId: img-contain, elementType: image, bounds: [40, 260, 400, 240], src: "media/blocks.svg", fit: {mode: contain}, border: {style: solid, width: 1, color: "#CCC"}, shadow: {blur: 12, color: "#00000055", offset: [4, 6]}}
+  - {elementId: img-fill, elementType: image, bounds: [480, 260, 200, 240], src: "media/blocks.svg", fit: {mode: fill}, opacity: 0.7}
+  - {elementId: img-rot, elementType: image, bounds: [720, 280, 180, 180], src: "media/blocks.svg", rotation: 15, cropShape: {shapeName: ellipse}}
+  - {elementId: icon-1, elementType: icon, bounds: [40, 460, 48, 48], iconName: "fas:lightbulb", fill: {type: solid, color: "#FF6900"}}
+  - {elementId: icon-2, elementType: icon, bounds: [40, 60, 24, 24], iconName: "fab:github", fill: {type: solid, color: "#333"}}

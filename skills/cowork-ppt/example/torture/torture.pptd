@@ -1,0 +1,7 @@
+version: v2
+title: Phase 3 Torture
+size: [960, 540]
+pages:
+  - pages/01_shapes.page
+  - pages/02_lines.page
+  - pages/03_image_icon.page

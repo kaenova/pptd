@@ -1,0 +1,17 @@
+background: {type: solid, color: "#FFFFFF"}
+elements:
+  - {elementId: rr, elementType: shape, bounds: [40, 40, 160, 100], shapeName: roundRect, adjustments: [20000], fill: {type: solid, color: "#FF6900"}}
+  - {elementId: rr-dflt, elementType: shape, bounds: [220, 40, 160, 100], shapeName: roundRect, fill: {type: solid, color: "#0AA"}, border: {style: dash, width: 2, color: "#036"}}
+  - {elementId: el, elementType: shape, bounds: [400, 40, 160, 100], shapeName: ellipse, fill: {type: gradient, gradientType: linear, angle: 45, stops: [{position: 0, color: "#F00"}, {position: 1, color: "#00F"}]}}
+  - {elementId: tri, elementType: shape, bounds: [580, 40, 160, 100], shapeName: triangle, fill: {type: solid, color: "#393"}}
+  - {elementId: donut, elementType: shape, bounds: [760, 30, 120, 120], shapeName: donut, fill: {type: solid, color: "#E11"}}
+  - {elementId: star, elementType: shape, bounds: [40, 170, 120, 120], shapeName: star5, fill: {type: solid, color: "#FB2"}}
+  - {elementId: arrowr, elementType: shape, bounds: [180, 190, 180, 80], shapeName: rightArrow, fill: {type: solid, color: "#555"}}
+  - {elementId: hp, elementType: shape, bounds: [380, 190, 160, 80], shapeName: homePlate, fill: {type: solid, color: "#75B"}}
+  - {elementId: chv, elementType: shape, bounds: [560, 190, 160, 80], shapeName: chevron, fill: {type: solid, color: "#174"}}
+  - {elementId: hollow, elementType: shape, bounds: [760, 170, 120, 120], shapeName: custom, viewBox: [1000, 1000], path: "M0,500 A500,500 0 1 1 1000,500 A500,500 0 1 1 0,500 Z M800,500 A300,300 0 1 0 200,500 A300,300 0 1 0 800,500 Z", fill: {type: solid, color: "#24C"}}
+  - {elementId: rot, elementType: shape, bounds: [40, 320, 140, 90], shapeName: roundRect, adjustments: [30000], fill: {type: solid, color: "#803"}, rotation: -12, opacity: 0.8, shadow: {blur: 8, color: "#00000066", offset: [3, 3]}}
+  - {elementId: flip, elementType: shape, bounds: [220, 320, 140, 90], shapeName: rightArrow, fill: {type: solid, color: "#084"}, flip: [true, false]}
+  - {elementId: dia, elementType: shape, bounds: [400, 315, 100, 100], shapeName: diamond, fill: {type: solid, color: "#C5A"}}
+  - {elementId: wcallout, elementType: shape, bounds: [540, 320, 200, 100], shapeName: wedgeRectCallout, fill: {type: solid, color: "#EEE"}, border: {style: solid, width: 1, color: "#999"}}
+  - {elementId: plus, elementType: shape, bounds: [780, 320, 100, 100], shapeName: plus, fill: {type: solid, color: "#4A8"}}
