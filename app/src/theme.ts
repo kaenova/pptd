@@ -26,7 +26,7 @@ export function themeCtx(t?: Theme): ThemeCtx {
 export function resolveColor(c: Color | undefined, theme: ThemeCtx): Color | undefined {
   if (c === undefined) return undefined
   if (!c.startsWith('$')) return c
-  return theme.colors[c.slice(1)] ?? '#FF00FF'
+  return theme.colors[c.slice(1)] ?? theme.colors[c] ?? '#FF00FF'
 }
 
 /** fontFamily: string | {latin, ea} → CSS font-family (ea first: CJK glyphs resolve from ea, latin from latin). */

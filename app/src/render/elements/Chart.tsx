@@ -1,9 +1,9 @@
 // Chart element: ECharts wrapper. Chart lifecycle: init on mount, setOption on deck/page change, dispose on unmount.
 // Canvas is fixed at bounds px inside the scaled wrapper (scale-to-fit is CSS transform, echarts never resizes).
 import { useEffect, useRef } from 'react'
-import { init, use } from 'echarts/core'
+import { init, use as registerEcharts } from 'echarts/core'
 import {
-  BarChart, LineChart, ScatterChart, BubbleChart, PieChart, RadarChart,
+  BarChart, LineChart, ScatterChart, PieChart, RadarChart,
   CandlestickChart, HeatmapChart, TreemapChart, SunburstChart, SankeyChart,
 } from 'echarts/charts'
 import {
@@ -19,8 +19,8 @@ import { chartOption, type ChartSpec } from '../charts/map'
 let registered = false
 function ensureRegistered() {
   if (registered) return
-  use([
-    BarChart, LineChart, ScatterChart, BubbleChart, PieChart, RadarChart,
+  registerEcharts([
+    BarChart, LineChart, ScatterChart, PieChart, RadarChart,
     CandlestickChart, HeatmapChart, TreemapChart, SunburstChart, SankeyChart,
     GridComponent, LegendComponent, TitleComponent, TooltipComponent,
     VisualMapComponent, RadarComponent, CanvasRenderer,

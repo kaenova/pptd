@@ -90,9 +90,12 @@ function boolOr<T>(v: boolean | Loose | undefined, def: T): boolean | T {
 export function fmtNum(v: number, f?: string): string {
   if (!f) return String(v)
   const pct = /%$/.test(f)
-  const dec = (f.split('.')[1] ?? '').replace('%', '').length
+  const dec = (f.split('.')[1]?.split(/[E,e]/)[0] ?? '').replace('%', '').length
   if (pct) return (v * 100).toFixed(dec) + '%'
-  if (f.includes('E+00')) return v.toExponential(f.split('.')[1]?.length || 0).replace('e', 'E').replace('E+', 'E+')
+  if (f.includes('E+00')) {
+    const edec = (f.split('.')[1]?.split(/[E,e]/)[0] ?? '').length
+    return v.toExponential(edec).replace('e', 'E')
+  }
   if (f.includes(',')) return v.toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec })
   return v.toFixed(dec)
 }
@@ -195,7 +198,7 @@ function cartesian(el: ChartSpec, series: Loose[], theme: ThemeCtx, types: Set<s
   // horizontal = y is category (bar/waterfall direction rule; numeric x + string y)
   const xCol = vals(rows, idx[s0.encode.x as string] ?? 0)
   const yCol = vals(rows, idx[s0.encode.y as string] ?? 0)
-  const yIsCat = (ycfg as Loose)?.type === 'category' || (!xcfgList.length && !ycfgList.length && xCol.every((v) => num(v) !== null && v !== null) && yCol.some((v) => typeof v === 'string'))
+  const yIsCat = (ycfg as Loose)?.type === 'category' || (!ycfgList.length && xCol.every((v) => num(v) !== null && v !== null) && yCol.some((v) => typeof v === 'string'))
   const horizontal = types.has('waterfall') || (types.size <= 3 && [...types].every((t) => ['bar', 'line', 'area'].includes(t)) && yIsCat)
 
   const xAxis: Loose[] = []
@@ -207,8 +210,9 @@ function cartesian(el: ChartSpec, series: Loose[], theme: ThemeCtx, types: Set<s
       yAxis.push(axisOpt(ycfg, false, theme, catCol, 'category'))
       xAxis.push(axisOpt(xcfg, true, theme, xCol, 'value'))
     } else {
-      xAxis.push(axisOpt(xcfg, false, theme, catCol, (xcfg as Loose | undefined)?.type === 'value' ? 'value' : 'category'))
-      yAxis.push(axisOpt(ycfg, true, theme, undefined, 'value'))
+      const xyVal = types.has('scatter') || types.has('bubble')
+      xAxis.push(axisOpt(xcfg, false, theme, catCol, xyVal ? undefined : (xcfg as Loose | undefined)?.type === 'value' ? 'value' : 'category'))
+      yAxis.push(axisOpt(ycfg, true, theme, undefined, xyVal ? undefined : 'value'))
     }
   }
 
@@ -219,7 +223,7 @@ function cartesian(el: ChartSpec, series: Loose[], theme: ThemeCtx, types: Set<s
     const vCol = horizontal ? s.encode.x : s.encode.y
     const v = vals(rows, idx[vCol]).map(num)
     const base: Loose = {
-      type: s.type === 'area' ? 'line' : s.type,
+      type: s.type === 'area' ? 'line' : s.type === 'bubble' ? 'scatter' : s.type,
       name: s.name ?? vCol,
       xAxisIndex: (s.xAxisIndex as number) || 0,
       yAxisIndex: (s.yAxisIndex as number) || 0,
@@ -268,7 +272,31 @@ function cartesian(el: ChartSpec, series: Loose[], theme: ThemeCtx, types: Set<s
       out.push(base)
       bi++
     } else if (s.type === 'bubble') {
+      // echarts v6 has no bubble type: scatter + [x, y, size] triples + symbolSize fn
+      base.type = 'scatter'
       base.itemStyle = { color: fillToColor(s.fill ?? THEME_CYCLE[ci], theme) }
+      const sizes = vals(rows, idx[s.encode.size as string]).map(num)
+      const fin = sizes.filter((x) => x !== null) as number[]
+      const vmin = fin.length ? Math.min(...fin) : 0
+      const vmax = fin.length ? Math.max(...fin) : 1
+      const [rmin, rmax] = (s.sizeRange as number[]) ?? [8, 48]
+      const sc = (s.sizeScale as string) ?? 'sqrt'
+      const t = (x: number) => (sc === 'linear' ? x : sc === 'log' ? Math.log10(Math.max(x, 1e-9)) : Math.sqrt(Math.max(x, 0)))
+      const tmin = t(vmin)
+      const tmax = t(vmax)
+      base.data = rows
+        .map((r) => [num(r[idx[s.encode.x as string]]), num(r[idx[s.encode.y as string]]), num(r[idx[s.encode.size as string]])])
+        .filter((r) => r[0] !== null && r[1] !== null)
+      base.symbolSize = (d: number[]) => {
+        const sv = d[2]
+        if (sv === null || sv === undefined || sv < 0) return 0
+        if (tmax === tmin) return (rmin + rmax) / 2
+        return rmin + ((t(sv) - tmin) / (tmax - tmin)) * (rmax - rmin)
+      }
+      const bdl: Loose = { ...(el.dataLabels ?? {}), ...(s.dataLabels ?? {}) }
+      const bl = labelOpt(s, el, theme, 'value', 'top')
+      if (bl && bdl.numberFormat) base.label = { ...bl, formatter: (p: Loose) => fmtNum(Number(p.value?.[2]), bdl.numberFormat) }
+      else if (bl) base.label = bl
       out.push(base)
       bi++
     } else if (s.type === 'candlestick') {
@@ -518,8 +546,9 @@ export function chartOption(el: ChartSpec, theme: ThemeCtx): EChartsCoreOption {
     opt.series = [pieOpt(first, el, theme)]
   } else if (types.has('radar')) {
     const rs = radarOpt(el, series, theme)
-    const ind = (rs[0] as Loose & { __indicator?: unknown }).__indicator
+    const ind = (rs as Loose & { __indicator?: unknown }).__indicator
     for (const r of rs) delete (r as Loose & { __indicator?: unknown }).__indicator
+    delete (rs as Loose & { __indicator?: unknown }).__indicator
     opt.radar = { indicator: ind, ...(el.spokeAxis?.show === false ? { splitLine: { show: false }, axisLine: { show: false } } : {}) }
     opt.series = rs
   } else if (types.has('heatmap')) {
