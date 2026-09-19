@@ -91,7 +91,7 @@ export async function loadProject(src: FileSource): Promise<LoadedProject> {
     if (!page || !Array.isArray(page.elements)) throw new Error(`invalid page: ${rel}`)
     pages.push(resolveSrc(page, base, urlOf) as Page)
   }
-  return { title: pptd.title ?? pptdPath, size: pptd.size ?? [960, 540], theme: pptd.theme, customFonts: pptd.customFonts, pages }
+  return { title: pptd.title ?? pptdPath, size: pptd.size ?? [960, 540], theme: pptd.theme, customFonts: pptd.customFonts, pages, pptdPath }
 }
 
 // ---------- upload plumbing ----------

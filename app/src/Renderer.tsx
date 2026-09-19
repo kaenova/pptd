@@ -2,7 +2,7 @@
 import type { Element, Page } from './types'
 import type { LoadedProject } from './types'
 import { animationGroups, animationStyle } from './anim'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { ThemeContext, themeCtx, useTheme } from './theme'
 import { fillStyle } from './render/Fill'
 import { TextBlock } from './render/elements/Text'
@@ -37,9 +37,9 @@ export function ElementView({ el }: { el: Element }) {
 /** Page background + elements. Background Fill is rendered behind everything; opacity via ImageFill.opacity. */
 export function PageView({ page }: { page: Page }) {
   const theme = useTheme()
-  const [click, setClick] = useState(-1)
   const groups = animationGroups(page.animations)
-  useEffect(() => setClick(groups[0]?.auto ? 0 : -1), [page])
+  // remount per page resets playback; group 0 auto-plays when it starts with with/afterPrevious
+  const [click, setClick] = useState(() => (groups[0]?.auto ? 0 : -1))
   const visible = new Set<string>()
   for (let i = 0; i <= click; i++) for (const step of groups[i]?.steps ?? []) visible.add(step.elementId)
   const active = new Map<string, import('./anim').Animation>()
@@ -52,7 +52,7 @@ export function PageView({ page }: { page: Page }) {
       {page.elements.map(el => {
         const anim = active.get(el.elementId)
         const hidden = groups.length > 0 && !visible.has(el.elementId) && page.animations?.some(a => a.elementId === el.elementId)
-        return <div key={el.elementId} style={animationStyle(anim ?? { elementId: el.elementId, effect: hidden ? 'fade-in' : 'appear' }, Boolean(anim))}>
+        return <div key={el.elementId} style={anim ? animationStyle(anim, true) : hidden ? { visibility: 'hidden' } : undefined}>
           <ElementView el={el} />
         </div>
       })}
@@ -64,7 +64,7 @@ export function PageView({ page }: { page: Page }) {
 export function DeckView({ project, index }: { project: LoadedProject; index: number }) {
   return (
     <ThemeContext.Provider value={themeCtx(project.theme)}>
-      <PageView page={project.pages[index]} />
+      <PageView key={index} page={project.pages[index]} />
     </ThemeContext.Provider>
   )
 }

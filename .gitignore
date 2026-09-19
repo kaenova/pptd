@@ -16,3 +16,6 @@ _user_meta.json
 
 # graft's local graph cache — regenerable, not committed (run `graft build`).
 /graft/
+
+# QA reference PNGs — regenerable via `python3 -m pptd_utils png all <deck>.pptd`
+skills/cowork-ppt/example/**/*-png/

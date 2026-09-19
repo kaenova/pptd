@@ -1,20 +1,22 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { LoadedProject } from './types'
 import { folderSource, filesFromDrop, httpSource, loadProject, stripRoot } from './load'
 import { Viewer } from './Viewer'
 import { DeckView } from './Renderer'
 
 const EXAMPLE_BASE = '/example/yu7-ppt' // dev proxy into the repo's example decks
-// ?deck=xiaomi-yu7-ppt-animation loads another example deck; also used by QA harness (phase 7)
-const exampleBase = () => {
-  const q = new URLSearchParams(window.location.search).get('deck')
-  return q ? `/example/${q}` : EXAMPLE_BASE
-}
+// ?deck=xiaomi-yu7-ppt-animation loads another example deck; ?qa=<folder> = dev-only
+// side-by-side QA: viewer vs soffice reference PNGs (python -m pptd_utils png all <deck>.pptd)
+const param = (k: string) => new URLSearchParams(window.location.search).get(k)
+const exampleBase = () => param('deck') ? `/example/${param('deck')}` : EXAMPLE_BASE
 
 export function Shell() {
   const [project, setProject] = useState<LoadedProject | null>(null)
   const [cur, setCur] = useState(0)
   const [status, setStatus] = useState<{ msg: string; err: boolean } | null>(null)
+  const [showNotes, setShowNotes] = useState(false)
+  const [present, setPresent] = useState(false)
+  const qaDeck = useMemo(() => param('qa'), [])
 
   const show = useCallback((p: LoadedProject) => {
     setProject(p)
@@ -57,20 +59,39 @@ export function Shell() {
     }
   }, [project])
 
-  // keyboard nav
+  // keyboard nav + present toggle
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight') setCur(c => Math.min(c + 1, (project?.pages.length ?? 1) - 1))
       if (e.key === 'ArrowLeft') setCur(c => Math.max(c - 1, 0))
+      if (e.key === 'f' && !e.metaKey && !e.ctrlKey) setPresent(p => !p)
     }
     addEventListener('keydown', onKey)
     return () => removeEventListener('keydown', onKey)
   }, [project])
 
+  // success toasts auto-dismiss; errors persist until the next action
+  useEffect(() => {
+    if (!status || status.err) return
+    const t = setTimeout(() => setStatus(null), 2500)
+    return () => clearTimeout(t)
+  }, [status])
+
+  // present mode = fullscreen stage, rail hidden
+  useEffect(() => {
+    if (present) void document.documentElement.requestFullscreen?.().catch(() => {})
+    else if (document.fullscreenElement) void document.exitFullscreen().catch(() => {})
+  }, [present])
+
   const n = project?.pages.length ?? 0
+  const notes = project && showNotes ? project.pages[cur]?.notes : undefined
+  const refSrc =
+    project && qaDeck && project.pptdPath
+      ? `/example/${qaDeck}/${project.pptdPath.replace(/.*\//, '').replace(/\.pptd$/, '')}-png/slide_${String(cur + 1).padStart(2, '0')}.png`
+      : null
 
   return (
-    <div className="shell">
+    <div className={`shell${present ? ' presenting' : ''}`}>
       <aside className="rail">
         <h1>Slides</h1>
         <div className="thumbs">
@@ -126,8 +147,16 @@ export function Shell() {
           )}
           {status && <span style={{ color: status.err ? '#f85' : '#7ee787' }}>{status.msg}</span>}
           <span className="spacer" />
+          {project && (
+            <>
+              <button className="ghost" onClick={() => setShowNotes(s => !s)}>{showNotes ? 'hide notes' : 'notes'}</button>
+              <button className="ghost" onClick={() => setPresent(p => !p)}>{present ? 'exit present' : 'present (f)'}</button>
+            </>
+          )}
           <span className="dim">←/→ navigate</span>
         </div>
+
+        {notes && <div className="notes">{notes}</div>}
 
         <div
           className="stage-wrap"
@@ -143,7 +172,15 @@ export function Shell() {
           }}
         >
           {project ? (
-            <Viewer project={project} index={cur} />
+            <div className={refSrc ? 'qa-split' : undefined}>
+              <Viewer project={project} index={cur} />
+              {refSrc && (
+                <figure className="qa-ref">
+                  <img src={refSrc} alt={`soffice reference, slide ${cur + 1}`} />
+                  <figcaption>reference (soffice)</figcaption>
+                </figure>
+              )}
+            </div>
           ) : (
             <div className="empty">
               <p>

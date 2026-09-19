@@ -257,4 +257,5 @@ export interface LoadedProject {
   theme?: Theme
   customFonts?: CustomFont[]
   pages: Page[]
+  pptdPath?: string // e.g. "yu7.pptd"; QA mode derives soffice reference PNG dir from its stem
 }

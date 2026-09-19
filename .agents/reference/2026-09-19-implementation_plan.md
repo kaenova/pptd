@@ -106,18 +106,27 @@ Implementation Handover Notes (Phase 5 — DONE):
 - motion-path: SVG path → `offset-path`
 - **Exit check:** `xiaomi-yu7-ppt-animation` example plays groups in order
 
-Implementation Handover Notes:
-...
+Implementation Handover Notes (Phase 6 — DONE):
+- **Built:** `app/src/anim.ts` — animation model, default durations, trigger grouping, CSS animation styles, exit/entrance classification, motion-path support.
+- **Effects:** appear/fade/fly/zoom/wipe/float/peek/rise entrance+exit variants; pulse, grow-shrink, spin, teeter, fill-color, transparency, color-pulse, motion-path.
+- **Trigger state machine:** `onClick` starts a new group; `withPrevious` runs concurrently; `afterPrevious` runs sequentially. First group auto-plays when marked `withPrevious`/`afterPrevious`; page click advances one group at a time; page remount resets state.
+- **Renderer integration:** `PageView` computes visible elements and active animation steps; animation wrappers preserve element-local transforms; animations remain scoped per page.
+- **Motion paths:** CSS `offset-path: path(...)`; escaped quotes in path data. Fill/color effects use CSS custom properties.
+- **Tests:** `app/test/anim.test.ts` added. 47 tests pass; `tsc -b --force` and Vite build pass.
+- **Known simplifications:** transform-heavy effects use wrapper animation, so advanced simultaneous transform composition is not modeled; fill-color is CSS variable based and may not recolor complex SVG/image content; repeat semantics are numeric only. Upgrade during Phase 7 only if visual QA exposes a deck requirement.
 
 ## Phase 7 — QA harness + polish
 - Dev-only route: side-by-side viewer vs `soffice` PNG (from existing `slides_image.py`), per-slide diff
 - Speaker notes panel, fullscreen/present mode, poster sizes, error toasts
 - README + npm scripts (`dev/build/test`)
 
-**Order fixed:** 2 before 3 (all elements consume primitives), 4/5 parallelizable, 6 last (needs stable render tree).
-
-Implementation Handover Notes:
-...
+Implementation Handover Notes (Phase 7 — DONE):
+- **QA harness:** dev-only `?qa=<deck-folder>` route renders viewer vs soffice reference side by side (`.qa-split`), synced per slide (`←/→`/thumbs). References come from the existing converter CLI — `python3 -m pptd_utils png all <deck>.pptd` → `<stem>-png/slide_NN.png` inside the deck folder, served by the dev static server through the existing `/example` proxy. PNG dirs are gitignored. `LoadedProject.pptdPath` added so the viewer can derive the reference dir.
+- **Polish:** speaker-notes panel (toolbar toggle, plain-text `page.notes`), present mode (`f` key/toolbar: fullscreen + rail/bar hidden via `.presenting`), success/error status toasts (auto-dismiss vs persistent). Poster sizes need no code: scale-to-fit is aspect-agnostic (project.size honored verbatim).
+- **README:** rewritten (run, usage, animations, QA mode); `lint` npm script added.
+- **Fixture:** torture page 01 gained a `notes` field (smoke test for the panel).
+- **Regression caught by QA harness:** Phase 6 wrapper hid every non-animated element (`appear` treated as unstarted entrance). Fixed in `PageView`: only animated elements go through `animationStyle`; unanimated wrappers get no style. Also removed the `useEffect` state reset (React lint) in favor of keyed remount `useState` initializer.
+- **Verified in browser:** QA side-by-side loads + syncs reference images; notes panel renders; present hides chrome; `xiaomi-yu7-ppt-animation` sequences `afterPrevious` steps correctly (mid-flight opacity checks; pending steps hold opacity 0 via `animation-fill-mode: both`). 47 tests pass; `tsc -b --force` clean; Vite build clean; oxlint: only pre-existing Fast Refresh warnings (test duplicate-declaration errors fixed).
 
 ---
 
@@ -128,4 +137,4 @@ Progress Tracker
 - [x] Phase 4 — DONE (Table.tsx: omitted-cell grid walk, full style chain mirroring converter, per-side BorderSpec chain, dji legacy compat, 39 tests, spec merged-cell example + dji real table verified)
 - [x] Phase 5 — DONE (ECharts mapper/wrapper for all 13 chart types, synthetic torture pages 05–08, 45 tests green, browser screenshots verified)
 - [x] Phase 6 — DONE (CSS animation effects, trigger groups, page-entry replay, click advancement, motion-path, 47 tests)
-- [ ] Phase 7
+- [x] Phase 7 — DONE (dev QA side-by-side vs soffice reference, notes panel, present mode, toasts, README + lint script, wrapper-visibility regression fix)

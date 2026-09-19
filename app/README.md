@@ -1,32 +1,44 @@
-# React + TypeScript + Vite
+# pptd-viewer
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Browser viewer for [PPTD](../../skills/cowork-ppt/reference/pptd.md) slide decks (.pptd folder format). Renders text, shapes, lines, images, icons, tables and all 13 chart types (ECharts), with entrance/exit/emphasis animations, speaker notes and a fullscreen present mode. No server, no build step for decks — just a folder.
 
-Currently, two official plugins are available:
+Stack: Vite + React + TypeScript, `js-yaml`, `echarts`. No state/UI libraries.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Run
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```sh
+cd app
+bun install
+bun run dev      # http://localhost:5173
+bun run build    # tsc -b && vite build
+bun run test     # bun test
+bun run lint     # oxlint src test
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+A static file server on port 5174 serving `skills/cowork-ppt/example/` enables the built-in example decks (Vite dev proxy `/example`).
+
+## Usage
+
+- **Upload** — pick or drop a deck folder (root must contain the `.pptd` file). Everything stays local; media loads via blob URLs.
+- **Example decks** — `?deck=<folder>`, e.g. `http://localhost:5173/?deck=yu7-ppt` or `?deck=xiaomi-yu7-ppt-animation`.
+- **Navigate** — thumbnail rail, `←`/`→`, or click (a click also advances animation groups on animated pages).
+- **Notes** — toolbar `notes` toggles the speaker-notes panel.
+- **Present** — toolbar `present` or `f`: fullscreen, chrome hidden.
+- **Poster sizes** — deck `size` is honored verbatim (e.g. `[720, 1280]` 9:16); the canvas scales to fit any aspect.
+
+## Animations
+
+Page-level `animations` arrays follow the spec: `onClick` starts a click group, `withPrevious` joins it, `afterPrevious` chains. The first group auto-plays on slide enter when it starts with `withPrevious`/`afterPrevious`. Effects map to CSS keyframes; `motion-path` uses native `offset-path`. Thumbnails don't play animations.
+
+## QA mode (dev-only)
+
+Side-by-side viewer vs. LibreOffice reference render, per slide:
+
+```sh
+python3 -m pptd_utils png all skills/cowork-ppt/example/yu7-ppt/yu7.pptd
+# -> skills/cowork-ppt/example/yu7-ppt/yu7-png/slide_NN.png
+bun run dev &
+open "http://localhost:5173/?deck=yu7-ppt&qa=yu7-ppt"
+```
+
+Reference PNGs are gitignored (regenerable).
