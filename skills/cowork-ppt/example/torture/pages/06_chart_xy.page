@@ -1,0 +1,99 @@
+pageType: content
+background:
+  type: solid
+  color: "#FFFFFF"
+elements:
+  # 5. scatter + bubble (spec c5 style, simplified)
+  - elementId: ch-scatter
+    elementType: chart
+    bounds: [30, 30, 440, 230]
+    title: Scatter
+    xAxis: {title: Age}
+    yAxis: {title: Income}
+    data:
+      cols: [age, income, group]
+      rows:
+        - [22, 5, a]
+        - [28, 12, a]
+        - [35, 25, a]
+        - [45, 40, a]
+        - [24, 8, b]
+        - [31, 18, b]
+        - [40, 30, b]
+        - [52, 60, b]
+    series:
+      - type: scatter
+        encode: {x: age, y: income}
+        name: Group A
+        fill: "#5470c6"
+        marker: {shape: circle, size: 12}
+      - type: scatter
+        encode: {x: age, y: income}
+        name: Group B
+        fill: "#ee6666"
+        marker: {shape: triangle, size: 12}
+  # 6. bubble w/ size channel
+  - elementId: ch-bubble
+    elementType: chart
+    bounds: [500, 30, 440, 230]
+    title: Bubble (sqrt scale)
+    data:
+      cols: [age, income, pop]
+      rows:
+        - [22, 5, 120]
+        - [28, 12, 380]
+        - [35, 25, 260]
+        - [45, 40, 180]
+        - [52, 60, 90]
+    seriesDefaults:
+      bubble: {sizeScale: sqrt, sizeRange: [8, 48]}
+    series:
+      - type: bubble
+        encode: {x: age, y: income, size: pop}
+        name: Population
+        fill: "#91cc75"
+  # 7. candlestick + MA overlay line (spec c6)
+  - elementId: ch-candle
+    elementType: chart
+    bounds: [30, 290, 440, 230]
+    title: Candlestick + MA overlay
+    yAxis: {title: Price}
+    data:
+      cols: [date, open, high, low, close, ma5]
+      rows:
+        - ["2024-01-01", 100, 110, 95, 108, null]
+        - ["2024-01-02", 108, 115, 105, 112, null]
+        - ["2024-01-03", 112, 118, 109, 116, null]
+        - ["2024-01-04", 116, 120, 110, 113, null]
+        - ["2024-01-05", 113, 117, 108, 115, 112.8]
+    series:
+      - type: candlestick
+        encode: {x: date, open: open, close: close, low: low, high: high}
+        upBars: {fill: "#ee6666"}
+        downBars: {fill: "#5470c6"}
+      - type: line
+        encode: {x: date, y: ma5}
+        name: MA5
+        smooth: true
+        width: 2
+        lineColor: "#fac858"
+  # 8. waterfall (spec c9)
+  - elementId: ch-waterfall
+    elementType: chart
+    bounds: [500, 290, 440, 230]
+    title: Waterfall
+    data:
+      cols: [phase, amount, total]
+      rows:
+        - [Opening balance, 500, true]
+        - [Sales revenue, 300, null]
+        - [Operating expenses, -180, null]
+        - [Taxes, -60, null]
+        - [Closing balance, 560, true]
+    series:
+      - type: waterfall
+        encode: {x: phase, y: amount, isTotal: total}
+        totalBars: {fill: "#5470c6"}
+        increaseBars: {fill: "#91cc75"}
+        decreaseBars: {fill: "#ee6666"}
+        dataLabels: {show: true}

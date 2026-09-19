@@ -10,3 +10,7 @@ pages:
   - pages/02_lines.page
   - pages/03_image_icon.page
   - pages/04_table.page
+  - pages/05_chart_cartesian.page
+  - pages/06_chart_xy.page
+  - pages/07_chart_misc.page
+  - pages/08_chart_radar_mix.page

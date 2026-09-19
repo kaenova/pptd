@@ -179,9 +179,22 @@ export interface ImageElement extends ElementBase {
 
 export interface ChartElement extends ElementBase {
   elementType: 'chart'
-  // phase 5; kept loose here
   data: Record<string, unknown>
   series: Record<string, unknown>[]
+  seriesDefaults?: Record<string, unknown>
+  xAxis?: unknown
+  yAxis?: unknown
+  barWidth?: number
+  barGap?: number
+  categoryGap?: number
+  spokeAxis?: Record<string, unknown>
+  title?: string | Record<string, unknown>
+  legend?: boolean | Record<string, unknown>
+  dataLabels?: Record<string, unknown>
+  fontFamily?: FontFamily
+  fill?: Fill
+  border?: Border
+  shadow?: Shadow
 }
 
 export interface IconElement extends ElementBase {

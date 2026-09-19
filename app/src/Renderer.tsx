@@ -9,19 +9,7 @@ import { LineBox } from './render/elements/Line'
 import { ImageBox } from './render/elements/Image'
 import { IconBox } from './render/elements/Icon'
 import { TableBox } from './render/elements/Table'
-
-function chartPlaceholder(el: Element & { elementType: 'chart' }) {
-  const [x, y, w, h] = el.bounds
-  return (
-    <div
-      className="el"
-      data-id={el.elementId}
-      style={{ position: 'absolute', left: x, top: y, width: w, height: h, border: '1px dashed #bbb', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999', fontSize: 12 }}
-    >
-      chart (phase 5)
-    </div>
-  )
-}
+import { ChartBox } from './render/elements/Chart'
 
 export function ElementView({ el }: { el: Element }) {
   switch (el.elementType) {
@@ -38,7 +26,7 @@ export function ElementView({ el }: { el: Element }) {
     case 'table':
       return <TableBox el={el} />
     case 'chart':
-      return chartPlaceholder(el)
+      return <ChartBox el={el} />
     default:
       return null
   }

@@ -1,0 +1,108 @@
+pageType: content
+background:
+  type: solid
+  color: "#FFFFFF"
+elements:
+  # 1. bar stacked w/ seriesDefaults (spec c1 example)
+  - elementId: ch-bar
+    elementType: chart
+    bounds: [30, 30, 440, 240]
+    title: Bar (stacked)
+    data:
+      cols: [quarter, revenue, cost]
+      rows:
+        - [Q1, 120, 220]
+        - [Q2, 132, 182]
+        - [Q3, 101, 191]
+        - [Q4, 134, 234]
+    seriesDefaults:
+      bar: {stack: value}
+    series:
+      - type: bar
+        encode: {x: quarter, y: revenue}
+        name: Revenue
+        fill: "$primary"
+      - type: bar
+        encode: {x: quarter, y: cost}
+        name: Expenses
+        fill: "$accent"
+  # 2. line multi-series w/ dash/dot, null gap, smooth (spec c2)
+  - elementId: ch-line
+    elementType: chart
+    bounds: [500, 30, 440, 240]
+    title: Line (null gap, dash styles)
+    yAxis: {min: 0, max: 100, gridLine: {color: "#f0f0f0"}}
+    data:
+      cols: [month, actual, target, baseline]
+      rows:
+        - [Jan, 72, 65, 50]
+        - [Feb, 85, 70, 50]
+        - [Mar, null, 78, 50]
+        - [Apr, 90, 82, 50]
+    series:
+      - type: line
+        encode: {x: month, y: actual}
+        name: Actual
+        lineColor: "#5470c6"
+        width: 3
+        smooth: true
+      - type: line
+        encode: {x: month, y: target}
+        name: Target
+        lineColor: "#ee6666"
+        lineStyle: dash
+        smooth: true
+      - type: line
+        encode: {x: month, y: baseline}
+        name: Baseline
+        lineColor: "#999999"
+        lineStyle: dot
+        width: 1
+        marker: false
+  # 3. area streamgraph (spec c3)
+  - elementId: ch-area
+    elementType: chart
+    bounds: [30, 290, 440, 230]
+    title: Area (stream)
+    data:
+      cols: [week, web, app, partner]
+      rows:
+        - [W1, 200, 120, 80]
+        - [W2, 240, 160, 90]
+        - [W3, 260, 200, 110]
+        - [W4, 280, 240, 130]
+    seriesDefaults:
+      area: {stack: stream}
+    series:
+      - type: area
+        encode: {x: week, y: web}
+        name: Web
+        areaColor: "#5470c6"
+      - type: area
+        encode: {x: week, y: app}
+        name: App
+        areaColor: "#91cc75"
+      - type: area
+        encode: {x: week, y: partner}
+        name: Partner
+        areaColor: "#fac858"
+  # 4. pie w/ donut + percentage labels + theme-ref fills array
+  - elementId: ch-pie
+    elementType: chart
+    bounds: [500, 290, 440, 230]
+    title: Pie (donut 0.45, startAngle 90)
+    legend: {position: right}
+    data:
+      cols: [category, amount]
+      rows:
+        - [Alpha, 40]
+        - [Beta, 30]
+        - [Gamma, 20]
+        - [Delta, 10]
+    series:
+      - type: pie
+        encode: {category: category, value: amount}
+        innerRadius: 0.45
+        startAngle: 90
+        fill: ["$primary", "#91cc75", "#fac858", "#ee6666"]
+        dataLabels: {show: true, content: percentage, numberFormat: "0%"}

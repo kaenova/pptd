@@ -1,0 +1,75 @@
+pageType: content
+background:
+  type: solid
+  color: "#FFFFFF"
+elements:
+  # 9. heatmap (spec c10)
+  - elementId: ch-heatmap
+    elementType: chart
+    bounds: [30, 30, 440, 230]
+    title: Heatmap
+    data:
+      cols: [hour, day, count]
+      rows:
+        - ["00:00", Mon, 5]
+        - ["00:00", Tue, 8]
+        - ["06:00", Mon, 22]
+        - ["12:00", Mon, 45]
+        - ["12:00", Tue, 30]
+    series:
+      - type: heatmap
+        encode: {x: hour, y: day, value: count}
+        colorScheme: ["#ffffff", "#5470c6"]
+        colorScale: {domain: [0, 50]}
+  # 10. treemap w/ hierarchy (spec c11)
+  - elementId: ch-treemap
+    elementType: chart
+    bounds: [500, 30, 440, 230]
+    title: Treemap (hierarchy)
+    data:
+      cols: [dept, parentDept, budget]
+      rows:
+        - [Engineering, null, 1000]
+        - [Frontend, Engineering, 400]
+        - [Backend, Engineering, 600]
+        - [Sales, null, 800]
+    series:
+      - type: treemap
+        encode: {category: dept, value: budget, parent: parentDept}
+        fill: ["#5470c6", "#91cc75"]
+  # 11. sunburst (flat + parent)
+  - elementId: ch-sunburst
+    elementType: chart
+    bounds: [30, 290, 290, 230]
+    title: Sunburst
+    data:
+      cols: [node, parent, value]
+      rows:
+        - [Fruit, null, null]
+        - [Apple, Fruit, 10]
+        - [Banana, Fruit, 20]
+        - [Veg, null, null]
+        - [Carrot, Veg, 15]
+    series:
+      - type: sunburst
+        encode: {category: node, value: value, parent: parent}
+        fill: ["#5470c6", "#91cc75"]
+  # 12. sankey (spec c13)
+  - elementId: ch-sankey
+    elementType: chart
+    bounds: [350, 290, 590, 230]
+    title: Sankey (conversion funnel)
+    data:
+      cols: [from, to, users]
+      rows:
+        - [Ad campaign, Landing page, 10000]
+        - [Ad campaign, Direct search, 4000]
+        - [Landing page, Sign-up, 3000]
+        - [Landing page, Drop-off, 7000]
+        - [Sign-up, First order, 1200]
+        - [Direct search, First order, 2000]
+    series:
+      - type: sankey
+        encode: {source: from, target: to, flow: users}
+        nodeAlign: justify
+        fill: ["#5470c6", "#91cc75", "#fac858", "#ee6666", "#73c0de"]
