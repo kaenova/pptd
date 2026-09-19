@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { LoadedProject } from './types'
 import { DeckView } from './Renderer'
+import type { ComponentSelection } from './select'
 
 // Canvas: fixed-size page, scaled to fit the stage. Coordinates stay raw px
 // (origin top-left); scale is pure CSS transform, zero coordinate math.
-export function Viewer({ project, index }: { project: LoadedProject; index: number }) {
+export function Viewer({ project, index, onSelect }: { project: LoadedProject; index: number; onSelect?: (selection: ComponentSelection) => void }) {
   const stageRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(1)
 
@@ -31,7 +32,7 @@ export function Viewer({ project, index }: { project: LoadedProject; index: numb
         id="canvasWrap"
         style={{ width: w, height: h, transform: `scale(${scale})`, position: 'relative', overflow: 'hidden', background: '#fff', boxShadow: '0 8px 40px #000a' }}
       >
-        <DeckView project={project} index={index} />
+        <DeckView project={project} index={index} onSelect={onSelect} />
       </div>
     </div>
   )

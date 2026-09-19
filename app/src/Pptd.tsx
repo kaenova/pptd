@@ -1,8 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { FileSource } from './load'
 import type { LoadedProject } from './types'
 import { loadProject } from './load'
 import { Viewer } from './Viewer'
+import { selectionLabel, type ComponentSelection, type SelectFeature } from './select'
+import { SelectPopover } from './SelectPopover'
+import './index.css'
 export type PptdMode = 'view' | 'edit' | 'present'
 export type PptdSource = LoadedProject | FileSource
 
@@ -10,7 +13,7 @@ export interface PptdProps {
   source?: PptdSource
   mode?: PptdMode
   onSave?: (project: LoadedProject) => void | Promise<void>
-  feature?: { componentGrabber?: boolean }
+  features?: { select?: SelectFeature }
   className?: string
 }
 
@@ -19,9 +22,12 @@ function isLoadedProject(source: PptdSource): source is LoadedProject {
 }
 
 /** Reusable PPTD renderer. Editing hooks are reserved; current edit mode renders normally. */
-export function Pptd({ source, mode = 'view', onSave: _onSave, feature: _feature, className }: PptdProps) {
+export function Pptd({ source, mode = 'view', onSave: _onSave, features, className }: PptdProps) {
   const [project, setProject] = useState<LoadedProject | null>(() => (source && isLoadedProject(source) ? source : null))
   const [index, setIndex] = useState(0)
+  const [selection, setSelection] = useState<ComponentSelection | null>(null)
+  const [comment, setComment] = useState('')
+  const rootRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     let active = true
@@ -44,9 +50,20 @@ export function Pptd({ source, mode = 'view', onSave: _onSave, feature: _feature
   }, [source])
 
   if (!project) return null
+  const select = features?.select
+  const submit = () => {
+    if (!selection || !select) return
+    select.handleOnSelect(selectionLabel(selection), comment)
+    setSelection(null)
+    setComment('')
+  }
   return (
-    <div className={`pptd${mode === 'present' ? ' pptd-present' : ''}${className ? ` ${className}` : ''}`}>
-      <Viewer project={project} index={index} />
+    <div ref={rootRef} className={`pptd${mode === 'present' ? ' pptd-present' : ''}${className ? ` ${className}` : ''}`}>
+      <Viewer project={project} index={index} onSelect={select ? selection => {
+        const root = rootRef.current?.getBoundingClientRect()
+        setSelection(root ? { ...selection, x: selection.x - root.left, y: selection.y - root.top } : selection)
+      } : undefined} />
+      {selection && select && <SelectPopover selection={selection} comment={comment} onCommentChange={setComment} onSubmit={submit} />}
     </div>
   )
 }

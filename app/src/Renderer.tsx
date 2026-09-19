@@ -3,6 +3,7 @@ import type { Element, Page } from './types'
 import type { LoadedProject } from './types'
 import { animationGroups, animationStyle } from './anim'
 import { useState } from 'react'
+import type { ComponentSelection } from './select'
 import { ThemeContext, themeCtx, useTheme } from './theme'
 import { fillStyle } from './render/Fill'
 import { TextBlock } from './render/elements/Text'
@@ -35,7 +36,7 @@ export function ElementView({ el }: { el: Element }) {
 }
 
 /** Page background + elements. Background Fill is rendered behind everything; opacity via ImageFill.opacity. */
-export function PageView({ page }: { page: Page }) {
+export function PageView({ page, slide, onSelect }: { page: Page; slide: number; onSelect?: (selection: ComponentSelection) => void }) {
   const theme = useTheme()
   const groups = animationGroups(page.animations)
   // remount per page resets playback; group 0 auto-plays when it starts with with/afterPrevious
@@ -52,7 +53,11 @@ export function PageView({ page }: { page: Page }) {
       {page.elements.map(el => {
         const anim = active.get(el.elementId)
         const hidden = groups.length > 0 && !visible.has(el.elementId) && page.animations?.some(a => a.elementId === el.elementId)
-        return <div key={el.elementId} style={anim ? animationStyle(anim, true) : hidden ? { visibility: 'hidden' } : undefined}>
+        return <div
+          key={el.elementId}
+          style={anim ? animationStyle(anim, true) : hidden ? { visibility: 'hidden' } : undefined}
+          onClick={onSelect ? e => { e.stopPropagation(); onSelect({ slide, componentId: el.elementId, x: e.clientX, y: e.clientY }) } : undefined}
+        >
           <ElementView el={el} />
         </div>
       })}
@@ -61,10 +66,10 @@ export function PageView({ page }: { page: Page }) {
 }
 
 /** Theme provider + page. Mount once per deck so $refs resolve inside every element. */
-export function DeckView({ project, index }: { project: LoadedProject; index: number }) {
+export function DeckView({ project, index, onSelect }: { project: LoadedProject; index: number; onSelect?: (selection: ComponentSelection) => void }) {
   return (
     <ThemeContext.Provider value={themeCtx(project.theme)}>
-      <PageView key={index} page={project.pages[index]} />
+      <PageView key={index} page={project.pages[index]} slide={index} onSelect={onSelect} />
     </ThemeContext.Provider>
   )
 }
