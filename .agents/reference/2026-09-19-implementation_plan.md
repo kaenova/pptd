@@ -127,5 +127,5 @@ Progress Tracker
 - [x] Phase 3 — DONE (Shape/Line/Image/Icon/Text element components, 20 shape presets + custom paths, arrows + curve lines, crop→fit→cropShape, FA icons via CDN, 32 tests, all example decks + torture deck verified in browser)
 - [x] Phase 4 — DONE (Table.tsx: omitted-cell grid walk, full style chain mirroring converter, per-side BorderSpec chain, dji legacy compat, 39 tests, spec merged-cell example + dji real table verified)
 - [x] Phase 5 — DONE (ECharts mapper/wrapper for all 13 chart types, synthetic torture pages 05–08, 45 tests green, browser screenshots verified)
-- [ ] Phase 6
+- [x] Phase 6 — DONE (CSS animation effects, trigger groups, page-entry replay, click advancement, motion-path, 47 tests)
 - [ ] Phase 7

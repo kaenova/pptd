@@ -215,6 +215,7 @@ export interface Page {
   background?: Fill
   notes?: string
   elements: Element[]
+  animations?: import('./anim').Animation[]
 }
 
 export interface TextStyleConfig {

@@ -157,3 +157,36 @@ button.ghost,
 .el {
   position: absolute;
 }
+
+@keyframes pptd-fade-in { from { opacity: 0 } to { opacity: 1 } }
+@keyframes pptd-fade-out { from { opacity: 1 } to { opacity: 0 } }
+@keyframes pptd-zoom-in { from { opacity: 0; transform: scale(.01) } to { opacity: 1; transform: scale(1) } }
+@keyframes pptd-zoom-out { from { opacity: 1; transform: scale(1) } to { opacity: 0; transform: scale(.01) } }
+@keyframes pptd-pulse { 0%,100% { transform: scale(1) } 50% { transform: scale(1.1) } }
+@keyframes pptd-grow-shrink { from { transform: scale(1) } to { transform: scale(1.5) } }
+@keyframes pptd-spin { from { transform: rotate(0) } to { transform: rotate(360deg) } }
+@keyframes pptd-teeter { 0%,100% { transform: rotate(0) } 25% { transform: rotate(-5deg) } 75% { transform: rotate(5deg) } }
+@keyframes pptd-fill-color { from { background-color: inherit } to { background-color: var(--pptd-to-fill) } }
+@keyframes pptd-color-pulse { 0%,100% { background-color: inherit } 50% { background-color: var(--pptd-to-fill) } }
+@keyframes pptd-transparency { from { opacity: 1 } to { opacity: var(--pptd-opacity) } }
+@keyframes pptd-fly-in-up { from { opacity: 0; transform: translateY(100vh) } to { opacity: 1; transform: translateY(0) } }
+@keyframes pptd-fly-in-down { from { opacity: 0; transform: translateY(-100vh) } to { opacity: 1; transform: translateY(0) } }
+@keyframes pptd-fly-in-left { from { opacity: 0; transform: translateX(100vw) } to { opacity: 1; transform: translateX(0) } }
+@keyframes pptd-fly-in-right { from { opacity: 0; transform: translateX(-100vw) } to { opacity: 1; transform: translateX(0) } }
+@keyframes pptd-fly-out-up { from { opacity: 1; transform: translateY(0) } to { opacity: 0; transform: translateY(-100vh) } }
+@keyframes pptd-fly-out-down { from { opacity: 1; transform: translateY(0) } to { opacity: 0; transform: translateY(100vh) } }
+@keyframes pptd-fly-out-left { from { opacity: 1; transform: translateX(0) } to { opacity: 0; transform: translateX(-100vw) } }
+@keyframes pptd-fly-out-right { from { opacity: 1; transform: translateX(0) } to { opacity: 0; transform: translateX(100vw) } }
+@keyframes pptd-float-in-up { from { opacity: 0; transform: translateY(10vh) } to { opacity: 1; transform: translateY(0) } }
+@keyframes pptd-float-in-down { from { opacity: 0; transform: translateY(-10vh) } to { opacity: 1; transform: translateY(0) } }
+@keyframes pptd-float-out-up { from { opacity: 1; transform: translateY(0) } to { opacity: 0; transform: translateY(-10vh) } }
+@keyframes pptd-float-out-down { from { opacity: 1; transform: translateY(0) } to { opacity: 0; transform: translateY(10vh) } }
+@keyframes pptd-wipe-in-up { from { opacity: 0 } to { opacity: 1 } }
+@keyframes pptd-wipe-in-down { from { opacity: 0 } to { opacity: 1 } }
+@keyframes pptd-wipe-in-left { from { opacity: 0 } to { opacity: 1 } }
+@keyframes pptd-wipe-in-right { from { opacity: 0 } to { opacity: 1 } }
+@keyframes pptd-wipe-out-up { from { opacity: 1 } to { opacity: 0 } }
+@keyframes pptd-wipe-out-down { from { opacity: 1 } to { opacity: 0 } }
+@keyframes pptd-wipe-out-left { from { opacity: 1 } to { opacity: 0 } }
+@keyframes pptd-wipe-out-right { from { opacity: 1 } to { opacity: 0 } }
+@keyframes pptd-motion-path { from { offset-distance: 0% } to { offset-distance: 100% } }

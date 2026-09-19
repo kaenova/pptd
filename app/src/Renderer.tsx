@@ -1,6 +1,8 @@
 // Page renderer. Later element in page.elements = higher layer (spec), no z-index.
 import type { Element, Page } from './types'
 import type { LoadedProject } from './types'
+import { animationGroups, animationStyle } from './anim'
+import { useEffect, useState } from 'react'
 import { ThemeContext, themeCtx, useTheme } from './theme'
 import { fillStyle } from './render/Fill'
 import { TextBlock } from './render/elements/Text'
@@ -35,14 +37,25 @@ export function ElementView({ el }: { el: Element }) {
 /** Page background + elements. Background Fill is rendered behind everything; opacity via ImageFill.opacity. */
 export function PageView({ page }: { page: Page }) {
   const theme = useTheme()
+  const [click, setClick] = useState(-1)
+  const groups = animationGroups(page.animations)
+  useEffect(() => setClick(groups[0]?.auto ? 0 : -1), [page])
+  const visible = new Set<string>()
+  for (let i = 0; i <= click; i++) for (const step of groups[i]?.steps ?? []) visible.add(step.elementId)
+  const active = new Map<string, import('./anim').Animation>()
+  for (let i = 0; i <= click; i++) for (const step of groups[i]?.steps ?? []) active.set(step.elementId, step)
   const bg = page.background ?? { type: 'solid', color: '#FFFFFF' }
   const bgOpacity = bg.type === 'image' ? bg.opacity : undefined
   return (
-    <div style={{ position: 'absolute', inset: 0 }}>
+    <div style={{ position: 'absolute', inset: 0 }} onClick={() => groups.length && setClick(c => Math.min(c + 1, groups.length - 1))}>
       <div style={{ position: 'absolute', inset: 0, ...fillStyle(bg, theme), opacity: bgOpacity }} />
-      {page.elements.map(el => (
-        <ElementView key={el.elementId} el={el} />
-      ))}
+      {page.elements.map(el => {
+        const anim = active.get(el.elementId)
+        const hidden = groups.length > 0 && !visible.has(el.elementId) && page.animations?.some(a => a.elementId === el.elementId)
+        return <div key={el.elementId} style={animationStyle(anim ?? { elementId: el.elementId, effect: hidden ? 'fade-in' : 'appear' }, Boolean(anim))}>
+          <ElementView el={el} />
+        </div>
+      })}
     </div>
   )
 }
