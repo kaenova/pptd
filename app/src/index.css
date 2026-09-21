@@ -206,6 +206,7 @@ button.ghost:hover, .bar button:hover { background: var(--panel-raised); border-
 /* dev-only QA: viewer vs soffice reference side by side */
 .qa-split {
   flex: 1;
+  width: 100%;
   display: flex;
   align-items: stretch;
   justify-content: center;
