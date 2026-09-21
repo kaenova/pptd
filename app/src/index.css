@@ -242,11 +242,11 @@ button.ghost:hover, .bar button:hover { background: var(--panel-raised); border-
 .stage-wrap {
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: stretch;
+  justify-content: flex-start;
   overflow: hidden;
   position: relative;
-  padding: 24px;
+  padding: 16px 18px;
 }
 .stage-wrap.dragover::after {
   content: 'drop .pptd folder';
@@ -267,13 +267,14 @@ button.ghost:hover, .bar button:hover { background: var(--panel-raised); border-
   height: 100%;
   min-width: 0;
   display: flex;
-  gap: 18px;
+  align-items: stretch;
 }
 .slide-rail {
   width: 154px;
   flex: none;
-  padding: 2px 4px 2px 0;
+  padding: 2px 14px 2px 0;
   overflow: auto;
+  border-right: 1px solid var(--line-soft);
 }
 .slide-rail-heading {
   padding: 0 4px 10px;
@@ -288,7 +289,7 @@ button.ghost:hover, .bar button:hover { background: var(--panel-raised); border-
   position: relative;
   display: block;
   width: 100%;
-  padding: 5px 5px 20px;
+  padding: 5px;
   border: 1px solid var(--line);
   border-radius: 7px;
   background: var(--panel);
@@ -298,9 +299,8 @@ button.ghost:hover, .bar button:hover { background: var(--panel-raised); border-
 }
 .slide-thumb:hover { border-color: #52525b; background: var(--panel-raised); }
 .slide-thumb.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 16px #f9731633; }
-.slide-thumb-canvas { position: relative; display: block; width: 100%; overflow: hidden; border-radius: 3px; background: #fff; }
-.slide-thumb-page { position: absolute; left: 0; top: 0; transform-origin: top left; overflow: hidden; background: #fff; }
-.slide-thumb-number { position: absolute; left: 8px; bottom: 3px; font-size: 10px; font-variant-numeric: tabular-nums; }
+.slide-thumb-page { position: absolute; left: 5px; top: 5px; transform-origin: top left; overflow: hidden; border-radius: 3px; background: #fff; }
+.slide-thumb-number { position: absolute; right: 7px; bottom: 5px; font-size: 10px; font-variant-numeric: tabular-nums; }
 .stage {
   flex: 1;
   width: auto;
@@ -310,7 +310,8 @@ button.ghost:hover, .bar button:hover { background: var(--panel-raised); border-
   align-items: center;
   justify-content: center;
 }
-.stage > div {
+#canvasWrap {
+  flex: none;
   border: 1px solid #3f3f46;
   border-radius: 8px;
   box-shadow: 0 24px 70px #0009;
