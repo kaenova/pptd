@@ -1,30 +1,31 @@
 import { describe, it } from 'bun:test'
 import { strict as assert } from 'assert'
+import { kindOf, langOf, type PreviewKind } from '../src/Previewer'
 
-const IMAGE_RE = /\.(jpe?g|png|gif|webp|ico)$/i
-const BINARY_RE = /\.(jpe?g|png|gif|webp|ico|mp4|webm|mp3|wav|woff2?|ttf|otf|eot|pdf|zip)$/i
-const LANGUAGE_BY_EXT: Record<string, string> = {
-  js: 'javascript', ts: 'typescript', tsx: 'typescript', json: 'json', html: 'html',
-  css: 'css', md: 'markdown', yml: 'yaml', yaml: 'yaml', xml: 'xml', svg: 'xml', page: 'yaml',
-}
-const langOf = (f: string) => LANGUAGE_BY_EXT[f.split('.').pop()?.toLowerCase() ?? ''] ?? 'plaintext'
-
-describe('FilePreviewer helpers', () => {
+describe('Previewer helpers', () => {
   it('detects binary files case-insensitively', () => {
-    assert(BINARY_RE.test('media/photo.png'))
-    assert(BINARY_RE.test('media/photo.JPG'))
-    assert(!BINARY_RE.test('yu7.pptd/pages/slide-01.page'))
-    assert(!BINARY_RE.test('README.md'))
+    assert.equal(kindOf('media/photo.png'), 'image')
+    assert.equal(kindOf('media/photo.JPG'), 'image')
+    assert.equal(kindOf('media/video.mp4'), 'binary')
+    assert.equal(kindOf('font.woff2'), 'binary')
+    assert.notEqual(kindOf('yu7.pptd/pages/slide-01.page'), 'binary')
+    assert.equal(kindOf('README.md'), 'text')
   })
-  it('treats images as image-preview, not text', () => {
-    assert(IMAGE_RE.test('media/logo.png'))
-    assert(!IMAGE_RE.test('media/video.mp4'))
-    assert(BINARY_RE.test('media/logo.png'))
+  it('treats images as image-preview, not text/binary', () => {
+    assert.equal(kindOf('media/logo.png'), 'image')
+    assert.notEqual(kindOf('media/logo.png'), 'binary')
+    assert.notEqual(kindOf('media/logo.png'), 'text')
   })
   it('infers language from extension', () => {
     assert.equal(langOf('pages/slide-01.page'), 'yaml')
     assert.equal(langOf('theme.css'), 'css')
     assert.equal(langOf('notes.txt'), 'plaintext')
     assert.equal(langOf('data.weird'), 'plaintext')
+  })
+  it('every kind is a valid PreviewKind', () => {
+    const kinds: PreviewKind[] = ['text', 'image', 'binary']
+    assert(kinds.includes(kindOf('a.page')))
+    assert(kinds.includes(kindOf('a.png')))
+    assert(kinds.includes(kindOf('a.mp4')))
   })
 })

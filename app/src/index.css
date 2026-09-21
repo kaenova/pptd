@@ -31,6 +31,7 @@
 }
 
 /* Monaco mounts its own editor DOM — can't class it from JSX */
+/* Monaco mounts its own editor DOM — can't class it from JSX */
 .file-previewer-content > .monaco-editor {
   height: 100%;
   min-height: 300px;
