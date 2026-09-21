@@ -299,8 +299,7 @@ button.ghost:hover, .bar button:hover { background: var(--panel-raised); border-
 }
 .slide-thumb:hover { border-color: #52525b; background: var(--panel-raised); }
 .slide-thumb.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 16px #f9731633; }
-.slide-thumb-viewport { position: absolute; inset: 5px 5px 21px; overflow: hidden; border-radius: 3px; background: #fff; }
-.slide-thumb-page { position: absolute; left: 0; top: 0; transform-origin: top left; overflow: hidden; border-radius: 3px; background: #fff; }
+.slide-thumb-page { position: absolute; left: 5px; top: 5px; transform-origin: top left; overflow: hidden; border-radius: 3px; background: #fff; }
 .slide-thumb-number { position: absolute; right: 7px; bottom: 5px; font-size: 10px; font-variant-numeric: tabular-nums; }
 .stage {
   flex: 1;
