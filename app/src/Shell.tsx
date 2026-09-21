@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { LoadedProject } from './types'
-import { folderSource, filesFromDrop, httpSource, loadProject, stripRoot, type FileSource } from './load'
+import { folderSource, filesFromDrop, loadProject, stripRoot, type FileSource } from './load'
 import { Viewer } from './Viewer'
 import { FileExplorer } from './FileExplorer'
 import { FilePreviewer } from './FilePreviewer'
 
-const EXAMPLE_BASE = '/example/yu7-ppt' // dev proxy into the repo's example decks
 const param = (k: string) => new URLSearchParams(window.location.search).get(k)
-const exampleBase = () => (param('deck') ? `/example/${param('deck')}` : EXAMPLE_BASE)
 
 export function Shell() {
   const [project, setProject] = useState<LoadedProject | null>(null)
@@ -37,16 +35,6 @@ export function Shell() {
     }
   }, [show])
 
-  const loadExample = useCallback(async () => {
-    try {
-      setStatus({ msg: 'loading example…', err: false })
-      const src = httpSource(exampleBase())
-      show(await loadProject(src), src)
-      setStatus(null)
-    } catch (e) {
-      setStatus({ msg: e instanceof Error ? e.message : String(e), err: true })
-    }
-  }, [show])
 
   // inject deck-supplied fonts (spec: CustomFont.src is a Google Fonts CSS URL)
   useEffect(() => {
@@ -61,16 +49,16 @@ export function Shell() {
     }
   }, [project])
 
-  // keyboard nav + present toggle
+  // keyboard nav; in present mode arrows navigate, Esc exits
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight') setCur(c => Math.min(c + 1, (project?.pages.length ?? 1) - 1))
       if (e.key === 'ArrowLeft') setCur(c => Math.max(c - 1, 0))
-      if (e.key === 'f' && !e.metaKey && !e.ctrlKey) setPresent(p => !p)
+      if (!present && e.key === 'f' && !e.metaKey && !e.ctrlKey) setPresent(p => !p)
     }
     addEventListener('keydown', onKey)
     return () => removeEventListener('keydown', onKey)
-  }, [project])
+  }, [project, present])
 
   // success toasts auto-dismiss; errors persist until the next action
   useEffect(() => {
@@ -79,10 +67,18 @@ export function Shell() {
     return () => clearTimeout(t)
   }, [status])
 
-  // present mode = fullscreen stage, rail hidden
+  // present mode = fullscreen; browser Esc exits fullscreen → sync present=false
   useEffect(() => {
-    if (present) void document.documentElement.requestFullscreen?.().catch(() => {})
-    else if (document.fullscreenElement) void document.exitFullscreen().catch(() => {})
+    if (present) {
+      void document.documentElement.requestFullscreen?.().catch(() => {})
+    } else if (document.fullscreenElement) {
+      void document.exitFullscreen().catch(() => {})
+    }
+    const onFsChange = () => {
+      if (!document.fullscreenElement) setPresent(false)
+    }
+    addEventListener('fullscreenchange', onFsChange)
+    return () => removeEventListener('fullscreenchange', onFsChange)
   }, [present])
 
   const n = project?.pages.length ?? 0
@@ -93,37 +89,44 @@ export function Shell() {
       : null
 
   return (
-    <div className={`shell${present ? ' presenting' : ''}`}>
-      <FileExplorer project={project} onFiles={files => void handleFiles(files)} currentSlide={cur} onSlideChange={setCur} onFileSelect={setSelectedFile} />
-      <main className="main">
-        <div className="bar">
-          <div className="bar-title">
-            <span className="bar-mark">P</span>
-            <b>{project?.title ?? 'PPTD Viewer'}</b>
+    <div className="flex h-dvh">
+      {!present && (
+        <FileExplorer
+          project={project}
+          onFiles={files => void handleFiles(files)}
+          currentSlide={cur}
+          onSlideChange={setCur}
+          onFileSelect={setSelectedFile}
+        />
+      )}
+      <main className="flex min-w-0 flex-1 flex-col">
+        {!present && (
+          <>
+          <div className="flex items-center gap-2 border-b border-line bg-panel px-4 py-2 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="grid size-[25px] place-items-center rounded-md bg-accent font-extrabold text-white">P</span>
+            <b className="text-fg">{project?.title ?? 'PPTD Viewer'}</b>
           </div>
-          <button className="ghost" onClick={loadExample}>
-            Load example
-          </button>
-          {n > 0 && (
-            <span className="dim">
-              slide {cur + 1} / {n}
-            </span>
+          {n > 0 && <span className="text-dim">slide {cur + 1} / {n}</span>}
+          {status && (
+            <span className={status.err ? 'text-rose-300' : 'animate-[fade-in_.2s] text-green-300'}>{status.msg}</span>
           )}
-          {status && <span className={`status-message${status.err ? ' error' : ''}`}>{status.msg}</span>}
-          <span className="spacer" />
+          <span className="flex-1" />
           {project && (
             <>
-              <button className="ghost" onClick={() => setShowNotes(s => !s)}>{showNotes ? 'Hide notes' : 'Notes'}</button>
-              <button className="primary" onClick={() => setPresent(p => !p)}>{present ? 'Exit present' : 'Present'}</button>
+              <button className="rounded-md border border-line bg-transparent px-[11px] py-1.5 text-xs font-medium text-fg hover:border-zinc-700 hover:bg-panel-raised" onClick={() => setShowNotes(s => !s)}>{showNotes ? 'Hide notes' : 'Notes'}</button>
+              <button className="rounded-md border border-accent bg-accent px-[11px] py-1.5 text-xs font-medium text-zinc-900 hover:bg-orange-400" onClick={() => setPresent(true)}>{present ? 'Exit present' : 'Present'}</button>
             </>
           )}
-          <span className="dim">←/→ navigate</span>
-        </div>
+          <span className="text-dim">←/→ navigate</span>
+          </div>
 
-        {notes && <div className="notes">{notes}</div>}
+          {notes && <div className="border-b border-line bg-panel-raised px-5 py-3 whitespace-pre-wrap text-dim">{notes}</div>}
+          </>
+        )}
 
         <div
-          className="stage-wrap"
+          className="relative flex min-h-0 flex-1 items-center justify-center overflow-auto [&.dragover]:outline-2 [&.dragover]:outline-accent"
           onDragOver={e => {
             e.preventDefault()
             e.currentTarget.classList.add('dragover')
@@ -136,24 +139,24 @@ export function Shell() {
           }}
         >
           {project ? (
-            <div className={refSrc ? 'qa-split' : undefined}>
-              <Viewer project={project} index={cur} onSlideChange={setCur} />
+            <div className="flex h-full min-w-0 w-full">
+              <Viewer project={project} index={cur} onSlideChange={setCur} present={present} />
               {refSrc && (
-                <figure className="qa-ref">
-                  <img src={refSrc} alt={`soffice reference, slide ${cur + 1}`} />
-                  <figcaption>reference (soffice)</figcaption>
+                <figure className="flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center">
+                  <img src={refSrc} alt={`soffice reference, slide ${cur + 1}`} className="min-h-0 max-h-full max-w-full flex-1 rounded-lg border border-line object-contain" />
+                  <figcaption className="mt-2 text-[11px] text-muted">reference (soffice)</figcaption>
                 </figure>
               )}
             </div>
           ) : (
-            <div className="empty">
+            <div className="grid min-h-[200px] place-items-center p-10 text-dim">
               <p>
                 <b>Drop a PPTD project folder here</b>
               </p>
-              <p className="hint">
+              <p className="mt-2 text-center text-xs">
                 expected layout:
                 <br />
-                <code>my_deck.pptd / pages/*.page / media/*</code>
+                <code className="text-fg">my_deck.pptd / pages/*.page / media/*</code>
               </p>
             </div>
           )}

@@ -63,7 +63,7 @@ export function ShapeBox(el: ShapeElement) {
   const fill = svgFill(el.fill, theme, `fill-${el.elementId}`)
   const svgStyle: CSSProperties = { position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'visible' }
   return (
-    <div className="el" data-id={el.elementId} style={{ position: 'absolute', left: el.bounds[0], top: el.bounds[1], width: w, height: h, ...fx(el), pointerEvents: 'none' }}>
+    <div className="absolute" data-id={el.elementId} style={{ position: 'absolute', left: el.bounds[0], top: el.bounds[1], width: w, height: h, ...fx(el), pointerEvents: 'none' }}>
       <svg viewBox={`0 0 ${vw} ${vh}`} preserveAspectRatio="none" style={svgStyle}>
         {fill.defs}
         <path

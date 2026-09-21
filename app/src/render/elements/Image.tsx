@@ -47,7 +47,7 @@ export function ImageBox(el: ImageElement) {
     objectFit: el.fit?.mode ?? 'cover',
   }
   return (
-    <div className="el" data-id={el.elementId} style={wrapperStyle}>
+    <div className="absolute" data-id={el.elementId} style={wrapperStyle}>
       <img src={el.src} alt="" style={imgStyle} />
     </div>
   )

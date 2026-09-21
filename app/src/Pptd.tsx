@@ -22,7 +22,7 @@ function isLoadedProject(source: PptdSource): source is LoadedProject {
 }
 
 /** Reusable PPTD renderer. Editing hooks are reserved; current edit mode renders normally. */
-export function Pptd({ source, mode = 'view', onSave: _onSave, features, className }: PptdProps) {
+export function Pptd({ source, onSave: _onSave, features, className }: PptdProps) {
   const [project, setProject] = useState<LoadedProject | null>(() => (source && isLoadedProject(source) ? source : null))
   const [index, setIndex] = useState(0)
   const [selection, setSelection] = useState<ComponentSelection | null>(null)
@@ -58,7 +58,7 @@ export function Pptd({ source, mode = 'view', onSave: _onSave, features, classNa
     setComment('')
   }
   return (
-    <div ref={rootRef} className={`pptd${mode === 'present' ? ' pptd-present' : ''}${className ? ` ${className}` : ''}`}>
+    <div ref={rootRef} className={`relative h-full w-full overflow-hidden text-fg${className ? ` ${className}` : ''}`}>
       <Viewer project={project} index={index} onSlideChange={setIndex} onSelect={select ? selection => {
         const root = rootRef.current?.getBoundingClientRect()
         setSelection(root ? { ...selection, x: selection.x - root.left, y: selection.y - root.top } : selection)

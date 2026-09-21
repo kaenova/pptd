@@ -11,6 +11,9 @@ interface FileExplorerProps {
   onFileSelect?: (filePath: string) => void
 }
 
+const treeRow = 'flex min-h-8 w-full items-center gap-2 rounded-md border-0 bg-transparent px-[9px] text-left text-dim font-[inherit]'
+const treeHover = 'hover:bg-panel-raised hover:text-fg'
+
 export function FileExplorer({ project, onFiles, currentSlide, onSlideChange, onFileSelect }: FileExplorerProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const chooseFolder = () => inputRef.current?.click()
@@ -22,13 +25,24 @@ export function FileExplorer({ project, onFiles, currentSlide, onSlideChange, on
     void filesFromDrop(event.dataTransfer.items).then(onFiles)
   }
   return (
-    <aside className="file-explorer" onDragOver={event => event.preventDefault()} onDrop={onDrop}>
-      <div className="file-explorer-header">
+    <aside
+      className="flex w-[264px] max-sm:w-[210px] flex-none flex-col border-r border-line bg-panel text-fg max-md:hidden"
+      onDragOver={event => event.preventDefault()}
+      onDrop={onDrop}
+    >
+      <div className="flex min-h-[72px] items-center justify-between border-b border-line-soft px-4 py-3">
         <div>
-          <div className="eyebrow">Workspace</div>
-          <h1>File Explorer</h1>
+          <div className="text-[10px] font-semibold uppercase tracking-[.12em] text-muted">Workspace</div>
+          <h1 className="mt-[3px] text-[15px] tracking-tight">File Explorer</h1>
         </div>
-        <button className="icon-button" type="button" onClick={chooseFolder} aria-label="Open PPTD folder">＋</button>
+        <button
+          className="size-7 rounded-md border border-line bg-transparent text-lg leading-none text-dim hover:bg-panel-raised hover:text-fg"
+          type="button"
+          onClick={chooseFolder}
+          aria-label="Open PPTD folder"
+        >
+          ＋
+        </button>
       </div>
       <input
         ref={inputRef}
@@ -39,42 +53,61 @@ export function FileExplorer({ project, onFiles, currentSlide, onSlideChange, on
         webkitdirectory=""
         onChange={onChange}
       />
-      <div className="file-explorer-body">
-        <button className="folder-row folder-row-action" type="button" onClick={chooseFolder}>
-          <span className="folder-icon">⌁</span>
+      <div className="flex-1 overflow-auto px-2 py-3">
+        <button className={`${treeRow} mb-3 cursor-pointer text-accent ${treeHover}`} type="button" onClick={chooseFolder}>
+          <span className="w-3.5 text-center text-accent">⌁</span>
           <span>Open .pptd folder</span>
         </button>
         {project ? (
-          <div className="file-tree">
-            <div className="folder-row active"><span className="folder-icon">▾</span><span>{project.title}</span></div>
-            <div className="tree-file"><span className="file-icon">◆</span><span>{project.pptdPath ?? 'presentation.pptd'}</span></div>
-            <div className="tree-group"><span className="folder-icon">▾</span><span>pages</span></div>
+          <div>
+            <div className={`${treeRow} font-semibold text-fg`}>
+              <span className="w-3.5 text-center text-accent">▾</span>
+              <span>{project.title}</span>
+            </div>
+            <div className={treeRow}>
+              <span className="w-3.5 text-center text-[10px] text-muted">◆</span>
+              <span>{project.pptdPath ?? 'presentation.pptd'}</span>
+            </div>
+            <div className={treeRow}>
+              <span className="w-3.5 text-center text-accent">▾</span>
+              <span>pages</span>
+            </div>
             {project.pages.map((_, index) => (
               <button
-                className={`tree-file nested${index === currentSlide ? ' selected' : ''}`}
+                className={`${treeRow} cursor-pointer pl-[31px] ${treeHover}${index === currentSlide ? ' bg-accent-soft font-semibold text-fg shadow-[inset_2px_0_var(--color-accent)]' : ''}`}
                 type="button"
                 key={index}
                 onClick={() => onSlideChange(index)}
                 onDoubleClick={() => project.pagePaths?.[index] && onFileSelect?.(project.pagePaths[index])}
-              ><span className="file-icon page">▤</span><span>slide-{String(index + 1).padStart(2, '0')}.page</span></button>
-            ))}
-            <div className="tree-group"><span className="folder-icon">▾</span><span>media</span><span className="tree-count">assets</span></div>
-            {project.media?.map((file: string) => (
-              <button
-                className="tree-file nested"
-                type="button"
-                key={file}
-                onDoubleClick={() => onFileSelect?.(file)}
               >
-                <span className="file-icon">◆</span><span>{file}</span>
+                <span className="w-3.5 text-center text-[10px] text-sky-400">▤</span>
+                <span>slide-{String(index + 1).padStart(2, '0')}.page</span>
+              </button>
+            ))}
+            <div className={treeRow}>
+              <span className="w-3.5 text-center text-accent">▾</span>
+              <span>media</span>
+              <span className="ml-auto text-[11px] text-muted">assets</span>
+            </div>
+            {project.media?.map((file: string) => (
+              <button className={`${treeRow} cursor-pointer pl-[31px] ${treeHover}`} type="button" key={file} onDoubleClick={() => onFileSelect?.(file)}>
+                <span className="w-3.5 text-center text-[10px] text-muted">◆</span>
+                <span>{file}</span>
               </button>
             ))}
           </div>
         ) : (
-          <div className="explorer-empty"><span className="empty-icon">⌂</span><p>No presentation loaded</p><span>Drop a folder here</span></div>
+          <div className="grid justify-items-center gap-[7px] px-3 py-14 text-center text-muted">
+            <span className="text-2xl text-accent">⌂</span>
+            <p className="text-dim">No presentation loaded</p>
+            <span>Drop a folder here</span>
+          </div>
         )}
       </div>
-      <div className="file-explorer-footer"><span className={`status-dot${project ? ' ready' : ''}`} />{project ? 'Ready' : 'Waiting for a file'}</div>
+      <div className="flex items-center gap-2 border-t border-line-soft px-4 py-3 text-[11px] text-muted">
+        <span className={`size-[7px] rounded-full ${project ? 'bg-green-500 shadow-[0_0_8px_#22c55e88]' : 'bg-muted'}`} />
+        {project ? 'Ready' : 'Waiting for a file'}
+      </div>
     </aside>
   )
 }

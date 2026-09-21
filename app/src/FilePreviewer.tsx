@@ -44,8 +44,9 @@ export function FilePreviewer({ source, selectedFile, onClose }: FilePreviewerPr
     }).catch(err => setError(err instanceof Error ? err.message : String(err)))
   }, [source, selectedFile])
 
-  const handleMount: EditorProps['onMount'] = (editor, monaco: Monaco) => {
-    editorRef.current = editor
+  const handleBeforeMount = (monaco: Monaco) => {
+    // must be defined BEFORE the editor instance mounts — defining in onMount makes
+    // the first render fall back to the default light theme
     monaco.editor.defineTheme('pptd-dark', {
       base: 'vs-dark',
       inherit: true,
@@ -72,32 +73,46 @@ export function FilePreviewer({ source, selectedFile, onClose }: FilePreviewerPr
     })
   }
 
+  const handleMount: EditorProps['onMount'] = editor => {
+    editorRef.current = editor
+  }
+
   if (!selectedFile) return null
 
   return (
-    <div className="file-previewer-overlay" onClick={onClose}>
-      <div className="file-previewer" onClick={e => e.stopPropagation()}>
-        <div className="file-previewer-header">
-          <div className="file-previewer-title">
-            <span className="file-icon">▤</span>
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 animate-[fade-in_.15s_ease-out]" onClick={onClose}>
+      <div
+        className="flex h-[85vh] w-[min(1100px,92vw)] flex-col overflow-hidden rounded-xl border border-line bg-bg shadow-2xl animate-[slide-up_.2s_ease-out]"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-line-soft bg-panel px-4 py-3">
+          <div className="flex items-center gap-2 text-[13px] text-fg">
+            <span className="w-3.5 text-center text-[10px] text-muted">▤</span>
             <span>{selectedFile}</span>
           </div>
-          <button className="close-button" onClick={onClose} aria-label="Close preview">✕</button>
+          <button
+            className="size-7 rounded-md border border-line bg-transparent text-sm leading-none text-dim hover:bg-panel-raised hover:text-fg"
+            onClick={onClose}
+            aria-label="Close preview"
+          >
+            ✕
+          </button>
         </div>
-        <div className="file-previewer-content">
-          {error && <div className="file-previewer-error">⚠️ {error}</div>}
+        <div className="file-previewer-content min-h-0 flex-1">
+          {error && <div className="grid h-full place-items-center p-6 text-center text-rose-300">⚠️ {error}</div>}
           {!error && isImage && imgSrc && (
-            <div className="file-previewer-image">
-              <img src={imgSrc} alt={selectedFile} />
+            <div className="flex h-full items-center justify-center bg-[repeating-conic-gradient(#1c1c1f_0%_25%,#232326_0%_50%)] bg-[length:20px_20px] p-4">
+              <img src={imgSrc} alt={selectedFile} className="max-h-full max-w-full object-contain" />
             </div>
           )}
-          {!error && binary && !isImage && <div className="file-previewer-error">⚠️ binary file — no text preview</div>}
+          {!error && binary && !isImage && <div className="grid h-full place-items-center p-6 text-center text-rose-300">⚠️ binary file — no text preview</div>}
           {!error && !binary && (
             <Editor
               height="100%"
               language={language}
               value={content}
               theme="pptd-dark"
+              beforeMount={handleBeforeMount}
               onMount={handleMount}
               options={{
                 minimap: { enabled: true },
@@ -121,10 +136,10 @@ export function FilePreviewer({ source, selectedFile, onClose }: FilePreviewerPr
             />
           )}
         </div>
-        <div className="file-previewer-footer">
+        <div className="flex items-center gap-3 border-t border-line-soft bg-panel px-4 py-2 text-[11px] text-muted">
           <span>{content.length} characters</span>
           <span>{content.split('\n').length} lines</span>
-          <span className="spacer" />
+          <span className="flex-1" />
           <span>{language}</span>
         </div>
       </div>

@@ -14,7 +14,7 @@ import { IconBox } from './render/elements/Icon'
 import { TableBox } from './render/elements/Table'
 import { ChartBox } from './render/elements/Chart'
 
-export function ElementView({ el }: { el: Element }) {
+export function ElementView({ el, static: isStatic = false }: { el: Element; static?: boolean }) {
   switch (el.elementType) {
     case 'text':
       return <TextBlock {...el} />
@@ -29,16 +29,16 @@ export function ElementView({ el }: { el: Element }) {
     case 'table':
       return <TableBox el={el} />
     case 'chart':
-      return <ChartBox el={el} />
+      return <ChartBox el={el} static={isStatic} />
     default:
       return null
   }
 }
 
 /** Page background + elements. Background Fill is rendered behind everything; opacity via ImageFill.opacity. */
-export function PageView({ page, slide, onSelect }: { page: Page; slide: number; onSelect?: (selection: ComponentSelection) => void }) {
+export function PageView({ page, slide, onSelect, static: isStatic = false }: { page: Page; slide: number; onSelect?: (selection: ComponentSelection) => void; static?: boolean }) {
   const theme = useTheme()
-  const groups = animationGroups(page.animations)
+  const groups = isStatic ? [] : animationGroups(page.animations)
   // remount per page resets playback; group 0 auto-plays when it starts with with/afterPrevious
   const [click, setClick] = useState(() => (groups[0]?.auto ? 0 : -1))
   const [hoveredId, setHoveredId] = useState<string | null>(null)
@@ -57,18 +57,18 @@ export function PageView({ page, slide, onSelect }: { page: Page; slide: number;
         const hidden = groups.length > 0 && !visible.has(el.elementId) && page.animations?.some(a => a.elementId === el.elementId)
         return <div
           key={el.elementId}
-          className={onSelect ? 'pptd-selectable' : undefined}
+          className={onSelect ? 'cursor-crosshair' : undefined}
           style={anim ? animationStyle(anim, true) : hidden ? { visibility: 'hidden' } : undefined}
           onMouseEnter={onSelect ? () => setHoveredId(el.elementId) : undefined}
           onMouseLeave={onSelect ? () => setHoveredId(null) : undefined}
           onClick={onSelect ? e => { e.stopPropagation(); onSelect({ slide, componentId: el.elementId, x: e.clientX, y: e.clientY }) } : undefined}
         >
-          <ElementView el={el} />
+          <ElementView el={el} static={isStatic} />
         </div>
       })}
       {hovered && (
         <div
-          className="pptd-selection-highlight"
+          className="pointer-events-none absolute z-10 rounded-lg border-2 border-[#ff6900] bg-[#ff69001a] shadow-[0_0_0_1px_#fff8,0_0_12px_#ff690066]"
           style={{ left: hovered.bounds[0], top: hovered.bounds[1], width: hovered.bounds[2], height: hovered.bounds[3] }}
           aria-hidden="true"
         />
@@ -78,10 +78,10 @@ export function PageView({ page, slide, onSelect }: { page: Page; slide: number;
 }
 
 /** Theme provider + page. Mount once per deck so $refs resolve inside every element. */
-export function DeckView({ project, index, onSelect }: { project: LoadedProject; index: number; onSelect?: (selection: ComponentSelection) => void }) {
+export function DeckView({ project, index, onSelect, static: isStatic = false }: { project: LoadedProject; index: number; onSelect?: (selection: ComponentSelection) => void; static?: boolean }) {
   return (
     <ThemeContext.Provider value={themeCtx(project.theme)}>
-      <PageView key={index} page={project.pages[index]} slide={index} onSelect={onSelect} />
+      <PageView key={index} page={project.pages[index]} slide={index} onSelect={onSelect} static={isStatic} />
     </ThemeContext.Provider>
   )
 }

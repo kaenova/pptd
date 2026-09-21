@@ -36,7 +36,7 @@ export function IconBox(el: IconElement) {
   const color = iconColor(el.fill, theme)
   return (
     <div
-      className="el"
+      className="absolute"
       data-id={el.elementId}
       style={{
         position: 'absolute',

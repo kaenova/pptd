@@ -28,7 +28,7 @@ function ensureRegistered() {
   registered = true
 }
 
-export function ChartBox({ el }: { el: ChartElement }) {
+export function ChartBox({ el, static: isStatic = false }: { el: ChartElement; static?: boolean }) {
   ensureRegistered()
   const theme = useTheme()
   const ref = useRef<HTMLDivElement>(null)
@@ -46,12 +46,12 @@ export function ChartBox({ el }: { el: ChartElement }) {
   }, [])
 
   useEffect(() => {
-    chartRef.current?.setOption(chartOption(el as unknown as ChartSpec, theme), { notMerge: true })
+    chartRef.current?.setOption({ ...chartOption(el as unknown as ChartSpec, theme), animation: !isStatic }, { notMerge: true })
   }, [el, theme])
 
   return (
     <div
-      className="el chart"
+      className="absolute"
       data-id={el.elementId}
       style={{ position: 'absolute', left: el.bounds[0], top: el.bounds[1], width: w, height: h, ...boxStyle(el.fill, el.border, el.shadow, theme) }}
     >

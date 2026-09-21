@@ -13,10 +13,23 @@ export function SelectPopover({ selection, comment, onCommentChange, onSubmit }:
   const inputRef = useRef<HTMLTextAreaElement>(null)
   useEffect(() => inputRef.current?.focus(), [])
   return (
-    <div className="pptd-select-popup" style={{ left: selection.x, top: selection.y }} onClick={e => e.stopPropagation()}>
-      <div className="pptd-select-label">{selectionLabel(selection)}</div>
-      <textarea ref={inputRef} value={comment} onChange={e => onCommentChange(e.target.value)} placeholder="Add a comment" rows={3} />
-      <button type="button" onClick={onSubmit}>Send</button>
+    <div
+      className="absolute z-10 w-64 rounded-lg border border-line bg-panel-raised p-3 text-[13px] text-fg shadow-xl animate-[pptd-fade-in_.15s_ease-out]"
+      style={{ left: selection.x, top: selection.y }}
+      onClick={e => e.stopPropagation()}
+    >
+      <div className="mb-2 text-[11px] font-semibold uppercase tracking-[.12em] text-accent">{selectionLabel(selection)}</div>
+      <textarea
+        ref={inputRef}
+        value={comment}
+        onChange={e => onCommentChange(e.target.value)}
+        placeholder="Add a comment"
+        rows={3}
+        className="w-full resize-none rounded-md border border-line bg-bg p-2 text-[13px] text-fg outline-none placeholder:text-muted focus:border-accent"
+      />
+      <button type="button" onClick={onSubmit} className="mt-2 rounded-md bg-accent px-3 py-1.5 text-[13px] font-semibold text-white hover:brightness-110">
+        Send
+      </button>
     </div>
   )
 }

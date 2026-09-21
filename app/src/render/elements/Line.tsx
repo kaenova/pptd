@@ -58,7 +58,7 @@ export function LineBox(el: LineElement) {
   const color = stroke.stroke ?? '#000000'
   const [vw, vh] = el.viewBox
   return (
-    <div className="el" data-id={el.elementId} style={{ position: 'absolute', left: el.bounds[0], top: el.bounds[1], width: el.bounds[2], height: el.bounds[3], ...fx(el), pointerEvents: 'none' }}>
+    <div className="absolute" data-id={el.elementId} style={{ position: 'absolute', left: el.bounds[0], top: el.bounds[1], width: el.bounds[2], height: el.bounds[3], ...fx(el), pointerEvents: 'none' }}>
       <svg
         viewBox={`0 0 ${vw} ${vh}`}
         preserveAspectRatio="none"

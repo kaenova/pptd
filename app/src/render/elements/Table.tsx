@@ -219,7 +219,7 @@ export function TableBox({ el }: { el: TableElement }): ReactNode {
   for (let i = 0; i < nrows; i++) rowY.push(rowY[i] + (rh[i] ?? 0) * h)
 
   return (
-    <div className="el table" data-id={el.elementId} style={{ position: 'absolute', left: el.bounds[0], top: el.bounds[1], width: w, height: h, ...boxStyle(undefined, undefined, el.shadow, theme) }}>
+    <div className="absolute" data-id={el.elementId} style={{ position: 'absolute', left: el.bounds[0], top: el.bounds[1], width: w, height: h, ...boxStyle(undefined, undefined, el.shadow, theme) }}>
       {cells.map((g) => {
         const { flat, borders } = resolveCellStyle(g.r, g.c, nrows, ncols, cfg, g.cell, theme, el.fill)
         const cellStyle: CSSProperties = {
