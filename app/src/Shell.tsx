@@ -19,6 +19,7 @@ export function Shell() {
   const qaDeck = useMemo(() => param('qa'), [])
 
   const show = useCallback((p: LoadedProject) => {
+    setPresent(false)
     setProject(p)
     setCur(0)
   }, [])
