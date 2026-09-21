@@ -1,0 +1,5 @@
+export { fitScale, thumbScale } from './helpers'
+export { DeckRoot } from './Root'
+export { DeckSlideList } from './SlideList'
+export { DeckStage } from './Stage'
+export { DeckCanvas } from './Canvas'
