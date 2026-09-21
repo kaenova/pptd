@@ -124,22 +124,31 @@ body {
 }
 .thumb {
   width: 112px;
+  display: block;
   position: relative;
+  padding: 0;
   border: 1px solid var(--line);
   border-radius: 4px;
   overflow: hidden;
   cursor: pointer;
+  background: var(--panel);
+}
+.thumb .thumb-canvas {
+  position: relative;
+  display: block;
+  width: 100%;
+  overflow: hidden;
   background: #fff;
 }
 .thumb.active {
   outline: 2px solid var(--accent);
 }
 .thumb .no {
-  position: absolute;
-  right: 3px;
-  bottom: 2px;
-  font-size: 9px;
-  color: #555;
+  display: block;
+  padding: 3px 6px 4px;
+  font-size: 10px;
+  color: var(--dim);
+  text-align: center;
   z-index: 2;
 }
 .hint {

@@ -36,29 +36,33 @@ export function Viewer({ project, index, onSelect, onSlideChange }: { project: L
               key={slideIndex}
               type="button"
               className={`thumb${slideIndex === index ? ' active' : ''}`}
-              style={{ height: (112 * h) / w }}
-              aria-label={`Open slide ${slideIndex + 1}`}
-              aria-current={slideIndex === index ? 'page' : undefined}
               onClick={event => {
                 event.stopPropagation()
                 onSlideChange?.(slideIndex)
               }}
             >
-              <div
-                className="mini"
-                aria-hidden="true"
-                style={{
-                  width: w,
-                  height: h,
-                  transform: `scale(${112 / w})`,
-                  transformOrigin: 'top left',
-                  position: 'absolute',
-                  overflow: 'hidden',
-                  background: '#fff',
-                }}
+              <span
+                className="thumb-canvas"
+                style={{ height: (112 * h) / w }}
               >
-                <DeckView project={project} index={slideIndex} />
-              </div>
+                <div
+                  className="mini"
+                  aria-hidden="true"
+                  style={{
+                    width: w,
+                    height: h,
+                    transform: `scale(${112 / w})`,
+                    transformOrigin: 'top left',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    overflow: 'hidden',
+                    background: '#fff',
+                  }}
+                >
+                  <DeckView project={project} index={slideIndex} />
+                </div>
+              </span>
               <span className="no">{slideIndex + 1}</span>
             </button>
           ))}
