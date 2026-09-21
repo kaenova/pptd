@@ -25,21 +25,18 @@ export function Viewer({ project, index, onSelect, onSlideChange }: { project: L
   const page = project.pages[index]
   if (!page) return null
   const [w, h] = project.size
-  const thumbWidth = 112
-  const thumbHeight = thumbWidth * h / w
-  const thumbScale = thumbWidth / w
 
   return (
     <div className="pptd-preview">
       <aside className="slide-rail" aria-label="Slide previews">
         <h2 className="slide-rail-heading">Slides</h2>
-        <div className="slide-thumbs">
+        <div className="thumbs">
           {project.pages.map((_, slideIndex) => (
             <button
               key={slideIndex}
               type="button"
-              className={`slide-thumb${slideIndex === index ? ' active' : ''}`}
-              style={{ width: thumbWidth, height: thumbHeight, overflow: 'hidden' }}
+              className={`thumb${slideIndex === index ? ' active' : ''}`}
+              style={{ height: (112 * h) / w }}
               aria-label={`Open slide ${slideIndex + 1}`}
               aria-current={slideIndex === index ? 'page' : undefined}
               onClick={event => {
@@ -47,19 +44,22 @@ export function Viewer({ project, index, onSelect, onSlideChange }: { project: L
                 onSlideChange?.(slideIndex)
               }}
             >
-              <span
-                className="slide-thumb-page"
+              <div
+                className="mini"
                 aria-hidden="true"
                 style={{
                   width: w,
                   height: h,
-                  transform: `scale(${thumbScale})`,
+                  transform: `scale(${112 / w})`,
                   transformOrigin: 'top left',
+                  position: 'absolute',
+                  overflow: 'hidden',
+                  background: '#fff',
                 }}
               >
                 <DeckView project={project} index={slideIndex} />
-              </span>
-              <span className="slide-thumb-number">{slideIndex + 1}</span>
+              </div>
+              <span className="no">{slideIndex + 1}</span>
             </button>
           ))}
         </div>
