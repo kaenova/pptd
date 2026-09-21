@@ -259,6 +259,10 @@ button.ghost:hover, .bar button:hover { background: var(--panel-raised); border-
   position: relative;
   padding: 0;
 }
+.stage-wrap > div {
+  flex: 1;
+  min-width: 0;
+}
 .stage-wrap.dragover::after {
   content: 'drop .pptd folder here';
   position: absolute;
@@ -436,7 +440,7 @@ button.ghost:hover, .bar button:hover { background: var(--panel-raised); border-
 .file-previewer {
   width: 100%;
   max-width: 900px;
-  max-height: 85vh;
+  height: 85vh;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 12px;
