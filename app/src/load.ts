@@ -86,12 +86,15 @@ export async function loadProject(src: FileSource): Promise<LoadedProject> {
 
   const urlOf = (path: string) => src.url(path)
   const pages: Page[] = []
+  const pagePaths: string[] = []
   for (const rel of pptd.pages) {
     const page = yamlLoad(await src.read(base + rel)) as Page
     if (!page || !Array.isArray(page.elements)) throw new Error(`invalid page: ${rel}`)
     pages.push(resolveSrc(page, base, urlOf) as Page)
+    pagePaths.push(base + rel)
   }
-  return { title: pptd.title ?? pptdPath, size: pptd.size ?? [960, 540], theme: pptd.theme, customFonts: pptd.customFonts, pages, pptdPath }
+  const media = entries.filter(p => IMG_RE.test(p))
+  return { title: pptd.title ?? pptdPath, size: pptd.size ?? [960, 540], theme: pptd.theme, customFonts: pptd.customFonts, pages, pagePaths, pptdPath, media }
 }
 
 // ---------- upload plumbing ----------

@@ -521,3 +521,19 @@ button.ghost:hover, .bar button:hover { background: var(--panel-raised); border-
   color: var(--muted);
   font-size: 11px;
 }
+/* image preview inside the file previewer dialog */
+.file-previewer-image {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background:
+    repeating-conic-gradient(#18181b 0% 25%, #09090b 0% 50%) 0 0 / 24px 24px; /* checkerboard shows transparency */
+}
+.file-previewer-image img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+}

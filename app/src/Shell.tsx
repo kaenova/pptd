@@ -1,33 +1,36 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { LoadedProject } from './types'
-import { folderSource, filesFromDrop, httpSource, loadProject, stripRoot } from './load'
+import { folderSource, filesFromDrop, httpSource, loadProject, stripRoot, type FileSource } from './load'
 import { Viewer } from './Viewer'
 import { FileExplorer } from './FileExplorer'
+import { FilePreviewer } from './FilePreviewer'
 
 const EXAMPLE_BASE = '/example/yu7-ppt' // dev proxy into the repo's example decks
-// ?deck=xiaomi-yu7-ppt-animation loads another example deck; ?qa=<folder> = dev-only
-// side-by-side QA: viewer vs soffice reference PNGs (python -m pptd_utils png all <deck>.pptd)
 const param = (k: string) => new URLSearchParams(window.location.search).get(k)
-const exampleBase = () => param('deck') ? `/example/${param('deck')}` : EXAMPLE_BASE
+const exampleBase = () => (param('deck') ? `/example/${param('deck')}` : EXAMPLE_BASE)
 
 export function Shell() {
   const [project, setProject] = useState<LoadedProject | null>(null)
+  const [source, setSource] = useState<FileSource | null>(null)
   const [cur, setCur] = useState(0)
   const [status, setStatus] = useState<{ msg: string; err: boolean } | null>(null)
   const [showNotes, setShowNotes] = useState(false)
   const [present, setPresent] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<string | null>(null)
   const qaDeck = useMemo(() => param('qa'), [])
 
-  const show = useCallback((p: LoadedProject) => {
+  const show = useCallback((p: LoadedProject, src: FileSource) => {
     setPresent(false)
     setProject(p)
+    setSource(src)
     setCur(0)
   }, [])
 
   const handleFiles = useCallback(async (files: File[]) => {
     try {
       setStatus({ msg: 'loading…', err: false })
-      show(await loadProject(folderSource(stripRoot(files))))
+      const src = folderSource(stripRoot(files))
+      show(await loadProject(src), src)
       setStatus(null)
     } catch (e) {
       setStatus({ msg: e instanceof Error ? e.message : String(e), err: true })
@@ -37,7 +40,8 @@ export function Shell() {
   const loadExample = useCallback(async () => {
     try {
       setStatus({ msg: 'loading example…', err: false })
-      show(await loadProject(httpSource(exampleBase())))
+      const src = httpSource(exampleBase())
+      show(await loadProject(src), src)
       setStatus(null)
     } catch (e) {
       setStatus({ msg: e instanceof Error ? e.message : String(e), err: true })
@@ -90,7 +94,7 @@ export function Shell() {
 
   return (
     <div className={`shell${present ? ' presenting' : ''}`}>
-      <FileExplorer project={project} onFiles={files => void handleFiles(files)} currentSlide={cur} onSlideChange={setCur} />
+      <FileExplorer project={project} onFiles={files => void handleFiles(files)} currentSlide={cur} onSlideChange={setCur} onFileSelect={setSelectedFile} />
       <main className="main">
         <div className="bar">
           <div className="bar-title">
@@ -155,6 +159,9 @@ export function Shell() {
           )}
         </div>
       </main>
+      {selectedFile && (
+        <FilePreviewer source={source} selectedFile={selectedFile} onClose={() => setSelectedFile(null)} />
+      )}
     </div>
   )
 }

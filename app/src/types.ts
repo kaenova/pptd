@@ -257,5 +257,7 @@ export interface LoadedProject {
   theme?: Theme
   customFonts?: CustomFont[]
   pages: Page[]
+  media?: string[] // image assets in the deck, for the file explorer/preview
+  pagePaths?: string[] // storage paths of pages, parallel to pages
   pptdPath?: string // e.g. "yu7.pptd"; QA mode derives soffice reference PNG dir from its stem
 }

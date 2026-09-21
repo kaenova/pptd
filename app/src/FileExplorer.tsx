@@ -8,9 +8,10 @@ interface FileExplorerProps {
   onFiles: (files: File[]) => void
   currentSlide: number
   onSlideChange: (index: number) => void
+  onFileSelect?: (filePath: string) => void
 }
 
-export function FileExplorer({ project, onFiles, currentSlide, onSlideChange }: FileExplorerProps) {
+export function FileExplorer({ project, onFiles, currentSlide, onSlideChange, onFileSelect }: FileExplorerProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const chooseFolder = () => inputRef.current?.click()
   const onChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -49,9 +50,25 @@ export function FileExplorer({ project, onFiles, currentSlide, onSlideChange }: 
             <div className="tree-file"><span className="file-icon">◆</span><span>{project.pptdPath ?? 'presentation.pptd'}</span></div>
             <div className="tree-group"><span className="folder-icon">▾</span><span>pages</span></div>
             {project.pages.map((_, index) => (
-              <button className={`tree-file nested${index === currentSlide ? ' selected' : ''}`} type="button" key={index} onClick={() => onSlideChange(index)}><span className="file-icon page">▤</span><span>slide-{String(index + 1).padStart(2, '0')}.page</span></button>
+              <button
+                className={`tree-file nested${index === currentSlide ? ' selected' : ''}`}
+                type="button"
+                key={index}
+                onClick={() => onSlideChange(index)}
+                onDoubleClick={() => project.pagePaths?.[index] && onFileSelect?.(project.pagePaths[index])}
+              ><span className="file-icon page">▤</span><span>slide-{String(index + 1).padStart(2, '0')}.page</span></button>
             ))}
-            <div className="tree-group"><span className="folder-icon">▸</span><span>media</span><span className="tree-count">assets</span></div>
+            <div className="tree-group"><span className="folder-icon">▾</span><span>media</span><span className="tree-count">assets</span></div>
+            {project.media?.map((file: string) => (
+              <button
+                className="tree-file nested"
+                type="button"
+                key={file}
+                onDoubleClick={() => onFileSelect?.(file)}
+              >
+                <span className="file-icon">◆</span><span>{file}</span>
+              </button>
+            ))}
           </div>
         ) : (
           <div className="explorer-empty"><span className="empty-icon">⌂</span><p>No presentation loaded</p><span>Drop a folder here</span></div>

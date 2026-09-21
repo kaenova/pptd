@@ -1,3 +1,7 @@
+if (import.meta.env.DEV) {
+  import("react-grab");
+}
+
 export { Pptd } from './Pptd'
 export type { PptdProps, PptdMode, PptdSource } from './Pptd'
 export type { FileSource } from './load'
