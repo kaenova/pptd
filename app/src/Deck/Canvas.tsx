@@ -6,6 +6,7 @@ import { useDeckCtx } from './context'
 import { patchTextCmd } from './commands'
 import { TextEditor } from './TextEditor'
 import { EditorOverlay, editingTextEl } from './EditorOverlay'
+import { PropertyPanel } from './PropertyPanel'
 
 export function DeckCanvas() {
   const { project, index, present, scale, playing, playToken, onSelect, editor, dispatch, runCommand } = useDeckCtx()
@@ -28,6 +29,7 @@ export function DeckCanvas() {
         editingId={editingEl ? editor.editingId ?? undefined : undefined}
       />
       {editActive && !editingEl && <EditorOverlay />}
+      {editActive && <PropertyPanel />}
       {editingEl && (
         <TextEditor el={editingEl} onCommit={text => runCommand(patchTextCmd(index, editingEl, text))} onExit={() => dispatch({ type: 'startEdit', id: null })} />
       )}

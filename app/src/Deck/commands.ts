@@ -60,3 +60,38 @@ export function multiSnapshotCmd(pageIndex: number, before: Element[], after: El
     undo: p => mapPage(p, pageIndex, pg => ({ ...pg, elements: pg.elements.map(e => beforeMap.get(e.elementId) ?? e) })),
   }
 }
+
+/** Layer reorder: move ids to front/back/forward/backward. Undo restores prior order. */
+export function reorderCmd(pageIndex: number, ids: string[], dir: 'front' | 'back' | 'forward' | 'backward'): Command {
+  const reorder = (elements: Element[]): Element[] => {
+    const set = new Set(ids)
+    const picked = elements.filter(e => set.has(e.elementId))
+    const rest = elements.filter(e => !set.has(e.elementId))
+    if (dir === 'front') return [...rest, ...picked]
+    if (dir === 'back') return [...picked, ...rest]
+    const next = [...elements]
+    for (const el of picked) {
+      const i = next.indexOf(el)
+      const j = dir === 'forward' ? Math.min(next.length - 1, i + 1) : Math.max(0, i - 1)
+      next.splice(i, 1)
+      next.splice(j, 0, el)
+    }
+    return next
+  }
+  const undoSnapshot: Element[][] = []
+  return {
+    label: `reorder ${dir}`,
+    do: p => {
+      const before = p.pages[pageIndex].elements
+      undoSnapshot.push(before)
+      return mapPage(p, pageIndex, pg => ({ ...pg, elements: reorder(pg.elements) }))
+    },
+    undo: p => mapPage(p, pageIndex, pg => ({ ...pg, elements: undoSnapshot[0] ?? pg.elements })),
+  }
+}
+
+/** Replace an entire page (background/notes edits). Undo swaps back. */
+export function pageCmd(pageIndex: number, before: Page, after: Page, label: string): Command {
+  const swap = (p: LoadedProject, pg: Page) => ({ ...p, pages: p.pages.map((q, i) => (i === pageIndex ? pg : q)) })
+  return { label, do: p => swap(p, after), undo: p => swap(p, before) }
+}
