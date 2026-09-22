@@ -1,6 +1,6 @@
 import { describe, it } from 'bun:test'
 import { strict as assert } from 'assert'
-import { fitScale, thumbScale, newTextElement } from '../src/Deck'
+import { fitScale, thumbScale, newTextElement, moveBounds } from '../src/Deck'
 
 describe('Deck helpers', () => {
   const size = [1280, 720] as const
@@ -26,5 +26,8 @@ describe('Deck helpers', () => {
     assert.equal(a.elementType, 'text')
     assert.equal(a.content.text, 'Text')
     assert.notEqual(a.elementId, newTextElement(0, 0).elementId)
+  })
+  it('moveBounds: shifts x/y, keeps w/h', () => {
+    assert.deepEqual(moveBounds([10, 20, 100, 50], 5, -3), [15, 17, 100, 50])
   })
 })

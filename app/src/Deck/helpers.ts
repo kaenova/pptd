@@ -26,3 +26,8 @@ export function newTextElement(x: number, y: number): import('../types').TextEle
   }
 }
 
+/** Bounds moved by (dx, dy) canvas px. */
+export function moveBounds(b: [number, number, number, number], dx: number, dy: number): [number, number, number, number] {
+  return [b[0] + dx, b[1] + dy, b[2], b[3]]
+}
+

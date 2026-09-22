@@ -36,18 +36,39 @@ export function ElementView({ el, static: isStatic = false }: { el: Element; sta
 }
 
 /** Page background + elements. Background Fill is rendered behind everything; opacity via ImageFill.opacity. */
-export function PageView({ page, slide, onSelect, static: isStatic = false, interactive = false, selectedId, editingId, onElementSelect, onElementEdit }: { page: Page; slide: number; onSelect?: (selection: ComponentSelection) => void; static?: boolean; interactive?: boolean; selectedId?: string; editingId?: string; onElementSelect?: (el: Element) => void; onElementEdit?: (el: Element) => void }) {
+export function PageView({ page, slide, onSelect, static: isStatic = false, interactive = false, selectedId, editingId, onElementSelect, onElementEdit, onElementMove, dragScale }: { page: Page; slide: number; onSelect?: (selection: ComponentSelection) => void; static?: boolean; interactive?: boolean; selectedId?: string; editingId?: string; onElementSelect?: (el: Element) => void; onElementEdit?: (el: Element) => void; onElementMove?: (el: Element, dx: number, dy: number) => void; dragScale?: number }) {
   const theme = useTheme()
   const groups = isStatic ? [] : animationGroups(page.animations)
   // remount per page resets playback; group 0 auto-plays when it starts with with/afterPrevious
   const [click, setClick] = useState(() => (groups[0]?.auto ? 0 : -1))
   const [hoveredId, setHoveredId] = useState<string | null>(null)
+  const [drag, setDrag] = useState<{ id: string; dx: number; dy: number } | null>(null)
   const visible = new Set<string>()
   for (let i = 0; i <= click; i++) for (const step of groups[i]?.steps ?? []) visible.add(step.elementId)
   const active = new Map<string, import('./anim').Animation>()
   for (let i = 0; i <= click; i++) for (const step of groups[i]?.steps ?? []) active.set(step.elementId, step)
   const bg = page.background ?? { type: 'solid', color: '#FFFFFF' }
-  const bgOpacity = bg.type === 'image' ? bg.opacity : undefined
+  const bgOpacity = bg.type === 'image' ? bg.opacity : undefined  // drag-to-move a selected element (screen px / dragScale = canvas px)
+  const startDrag = (e: import('react').PointerEvent, el: Element) => {
+    if (e.button !== 0 || !onElementMove || !dragScale) return
+    e.stopPropagation()
+    const sx = e.clientX
+    const sy = e.clientY
+    setDrag({ id: el.elementId, dx: 0, dy: 0 })
+    const onMove = (ev: PointerEvent) => setDrag({ id: el.elementId, dx: (ev.clientX - sx) / dragScale, dy: (ev.clientY - sy) / dragScale })
+    const onUp = (ev: PointerEvent) => {
+      removeEventListener('pointermove', onMove)
+      removeEventListener('pointerup', onUp)
+      setDrag(null)
+      const dx = (ev.clientX - sx) / dragScale
+      const dy = (ev.clientY - sy) / dragScale
+      if (dx || dy) onElementMove(el, dx, dy)
+    }
+    addEventListener('pointermove', onMove)
+    addEventListener('pointerup', onUp)
+  }
+  const dragOf = (id: string) => (drag?.id === id ? drag : undefined)
+
   const hovered = (interactive || onSelect) && !selectedId ? page.elements.find(el => el.elementId === hoveredId) : undefined
   const sel = selectedId ? page.elements.find(el => el.elementId === selectedId) : undefined
   const act = interactive || !!onSelect // hover/click affordances; blocks native text/image drag too
@@ -64,10 +85,14 @@ export function PageView({ page, slide, onSelect, static: isStatic = false, inte
         if (editingId === el.elementId) return null // editor overlay replaces it
         return <div
           key={el.elementId}
-          className={act ? (onSelect ? 'cursor-crosshair' : 'cursor-pointer') : undefined}
-          style={anim ? animationStyle(anim, true) : hidden ? { visibility: 'hidden' } : undefined}
+          className={act ? (onSelect ? 'cursor-crosshair' : selectedId === el.elementId && onElementMove ? 'cursor-move' : 'cursor-pointer') : undefined}
+          style={{
+            ...(anim ? animationStyle(anim, true) : hidden ? { visibility: 'hidden' } : undefined),
+            ...(dragOf(el.elementId) ? { transform: `translate(${drag!.dx}px, ${drag!.dy}px)` } : undefined),
+          }}
           onMouseEnter={act ? () => setHoveredId(el.elementId) : undefined}
           onMouseLeave={act ? () => setHoveredId(null) : undefined}
+          onPointerDown={onElementMove && selectedId === el.elementId && editingId !== el.elementId ? e => startDrag(e, el) : undefined}
           onClick={onSelect ? e => { e.stopPropagation(); onSelect({ slide, componentId: el.elementId, x: e.clientX, y: e.clientY }) } : onElementSelect ? e => { e.stopPropagation(); onElementSelect(el) } : undefined}
           onDoubleClick={onElementEdit ? e => { e.stopPropagation(); onElementEdit(el) } : undefined}
         >
@@ -77,7 +102,7 @@ export function PageView({ page, slide, onSelect, static: isStatic = false, inte
       {sel && (
         <div
           className="pointer-events-none absolute z-10 rounded-md border-2 border-accent"
-          style={{ left: sel.bounds[0], top: sel.bounds[1], width: sel.bounds[2], height: sel.bounds[3] }}
+          style={{ left: sel.bounds[0] + (dragOf(sel.elementId)?.dx ?? 0), top: sel.bounds[1] + (dragOf(sel.elementId)?.dy ?? 0), width: sel.bounds[2], height: sel.bounds[3] }}
           aria-hidden="true"
         />
       )}
@@ -93,10 +118,10 @@ export function PageView({ page, slide, onSelect, static: isStatic = false, inte
 }
 
 /** Theme provider + page. Mount once per deck so $refs resolve inside every element. */
-export function DeckView({ project, index, onSelect, static: isStatic = false, interactive = false, selectedId, editingId, onElementSelect, onElementEdit }: { project: LoadedProject; index: number; onSelect?: (selection: ComponentSelection) => void; static?: boolean; interactive?: boolean; selectedId?: string; editingId?: string; onElementSelect?: (el: Element) => void; onElementEdit?: (el: Element) => void }) {
+export function DeckView({ project, index, onSelect, static: isStatic = false, interactive = false, selectedId, editingId, onElementSelect, onElementEdit, onElementMove, dragScale }: { project: LoadedProject; index: number; onSelect?: (selection: ComponentSelection) => void; static?: boolean; interactive?: boolean; selectedId?: string; editingId?: string; onElementSelect?: (el: Element) => void; onElementEdit?: (el: Element) => void; onElementMove?: (el: Element, dx: number, dy: number) => void; dragScale?: number }) {
   return (
     <ThemeContext.Provider value={themeCtx(project.theme)}>
-      <PageView key={index} page={project.pages[index]} slide={index} onSelect={onSelect} static={isStatic} interactive={interactive} selectedId={selectedId} editingId={editingId} onElementSelect={onElementSelect} onElementEdit={onElementEdit} />
+      <PageView key={index} page={project.pages[index]} slide={index} onSelect={onSelect} static={isStatic} interactive={interactive} selectedId={selectedId} editingId={editingId} onElementSelect={onElementSelect} onElementEdit={onElementEdit} onElementMove={onElementMove} dragScale={dragScale} />
     </ThemeContext.Provider>
   )
 }

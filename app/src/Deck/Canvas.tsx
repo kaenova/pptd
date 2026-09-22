@@ -4,6 +4,7 @@
 import { DeckView } from '../Renderer'
 import type { LoadedProject, TextElement } from '../types'
 import { useDeckCtx } from './context'
+import { moveBounds } from './helpers'
 import { TextEditor } from './TextEditor'
 
 /** Immutable patch: replace an element's text content. */
@@ -12,6 +13,15 @@ export function patchText(pageIndex: number, elementId: string, text: string) {
     ...p,
     pages: p.pages.map((pg, i) =>
       i !== pageIndex ? pg : { ...pg, elements: pg.elements.map(e => (e.elementId === elementId && e.elementType === 'text' ? { ...e, content: { ...e.content, text } } : e)) }),
+  })
+}
+
+/** Immutable patch: move an element by canvas px. */
+export function patchMove(pageIndex: number, elementId: string, dx: number, dy: number) {
+  return (p: LoadedProject): LoadedProject => ({
+    ...p,
+    pages: p.pages.map((pg, i) =>
+      i !== pageIndex ? pg : { ...pg, elements: pg.elements.map(e => (e.elementId === elementId ? { ...e, bounds: moveBounds(e.bounds, dx, dy) } : e)) }),
   })
 }
 
@@ -45,6 +55,8 @@ export function DeckCanvas() {
           setSelectedId(el.elementId)
           if (el.elementType === 'text') setEditingId(el.elementId)
         } : undefined}
+        onElementMove={editActive && !editingEl && patchProject ? (el, dx, dy) => patchProject(patchMove(index, el.elementId, dx, dy)) : undefined}
+        dragScale={scale}
       />
       {editingEl && patchProject && (
         <TextEditor el={editingEl} onCommit={text => patchProject(patchText(index, editingEl.elementId, text))} onExit={() => setEditingId(null)} />
