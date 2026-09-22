@@ -11,7 +11,7 @@ const SHAPES = [
 ] as const
 
 export function DeckTool() {
-  const { present, tool, setTool, shapeName, setShapeName, undo, redo, editor } = useDeckCtx()
+  const { present, tool, setTool, shapeName, setShapeName, undo, redo, editor, grid, setGrid } = useDeckCtx()
   const [open, setOpen] = useState(false)
   const barRef = useRef<HTMLDivElement>(null)
 
@@ -32,10 +32,11 @@ export function DeckTool() {
       if (e.key === 'r') { setTool('shape'); setOpen(true) }
       if (e.key === 'l') setTool('line')
       if (e.key === 'i') setTool('image')
+      if (e.key === 'g') setGrid(!grid)
     }
     addEventListener('keydown', onKey)
     return () => removeEventListener('keydown', onKey)
-  }, [present, setTool, undo, redo])
+  }, [present, setTool, undo, redo, grid, setGrid])
 
   // close shape picker on outside click
   useEffect(() => {
@@ -92,6 +93,11 @@ export function DeckTool() {
         <button className={`${btn(false)} ${!editor.redoStack.length ? 'opacity-30' : ''}`} title="Redo (Ctrl+Shift+Z)" disabled={!editor.redoStack.length} onClick={redo}>
           <svg viewBox="0 0 24 24" className="size-4 rotate-180" fill="currentColor" aria-hidden="true">
             <path d="M9 7H5a8 8 0 118 8h-2v-2h2a6 6 0 10-6-6h4v2l4-3.5L9 3z" />
+          </svg>
+        </button>
+        <button className={btn(grid)} title="Grid (G)" aria-pressed={grid} onClick={() => setGrid(!grid)}>
+          <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+            <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
           </svg>
         </button>
       </div>

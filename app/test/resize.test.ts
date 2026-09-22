@@ -132,3 +132,32 @@ describe('creation factories', () => {
     assert.deepEqual(i.bounds, [68, 68, 64, 64])
   })
 })
+
+import { snapDelta } from '../src/Deck/helpers'
+
+describe('snapDelta', () => {
+  const t = [500, 0, 100, 100] as [number, number, number, number] // edges: x 500,600; center 550
+  it('snaps left edge within 6px', () => {
+    const r = snapDelta([495, 0, 100, 50], [t])
+    assert.equal(r.dx, 5)
+    assert.deepEqual(r.guides.map(g => g.at).sort((a,b)=>a-b), [500, 550, 600]) // all 3 moving lines are 5px from a guide
+  })
+  it('snaps center to center', () => {
+    const r = snapDelta([552, 0, 100, 50], [t]) // moving center 602 → nearest guide? center 550 within 6 of left edge 550? edges 500/600
+    assert.equal(r.dx, -2) // 600 - 602
+  })
+  it('no snap beyond threshold', () => {
+    const r = snapDelta([520, 0, 100, 50], [t])
+    assert.equal(r.dx, 0)
+    assert.deepEqual(r.guides, []) // 520 edges 520/570/620 — nearest guide 550 is 20 away
+  })
+  it('snaps y too', () => {
+    const r = snapDelta([0, 104, 50, 50], [t])
+    assert.equal(r.dy, -4)
+    assert.deepEqual(r.guides, [{ axis: 'y', at: 100 }])
+  })
+  it('prefers smallest delta', () => {
+    const r = snapDelta([497, 0, 100, 50], [[495, 0, 10, 10], [600, 0, 10, 10]])
+    assert.equal(r.dx, -2) // 495 edge wins over 600
+  })
+})

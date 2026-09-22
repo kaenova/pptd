@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Element, TextElement } from '../types'
 import { useDeckCtx } from './context'
 import { addElementCmd, moveCmd, multiSnapshotCmd } from './commands'
-import { localDelta, resizeBounds, snapAngle, normAngle, resizedElement, rectBounds, newTextElement, newShapeElement, newLineElement, newImageElement, newIconElement, MIN_SIZE, type Bounds, type Handle } from './helpers'
+import { localDelta, resizeBounds, snapAngle, normAngle, resizedElement, rectBounds, newTextElement, newShapeElement, newLineElement, newImageElement, newIconElement, MIN_SIZE, snapDelta, type Guide, type Bounds, type Handle } from './helpers'
 
 const MIN_DRAG = 2 // px (screen) before a pointer press counts as a drag
 const HANDLES: Handle[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']
@@ -22,7 +22,7 @@ const HANDLE_POS: Record<Handle, { left: string; top: string }> = {
 }
 
 type Gesture =
-  | { kind: 'move'; ids: string[]; dx: number; dy: number }
+  | { kind: 'move'; ids: string[]; dx: number; dy: number; guides: Guide[] }
   | { kind: 'resize'; id: string; bounds: Bounds }
   | { kind: 'rotate'; id: string; angle: number }
 interface MarqueeState { x0: number; y0: number; x1: number; y1: number }
@@ -138,7 +138,7 @@ export function EditorOverlay() {
       removeEventListener('pointermove', onMove)
       removeEventListener('pointerup', onUp)
       setGesture(null)
-      if (last !== base) runCommand(multiSnapshotCmd(index, [el], [{ ...el, rotation: last }], 'rotate'))
+      if (last !== base) runCommand(multiSnapshotCmd(index, [el], [{ ...el, rotation: last } as Element], 'rotate'))
     }
     addEventListener('pointermove', onMove)
     addEventListener('pointerup', onUp)
@@ -233,21 +233,37 @@ export function EditorOverlay() {
       const sx = e.clientX
       const sy = e.clientY
       let moved = false
+      const dragged = page.elements.filter(el => ids.includes(el.elementId))
+      const others = page.elements.filter(el => !ids.includes(el.elementId))
+      const targets = [...others.map(el => el.bounds), [0, 0, project.size[0], project.size[1]] as [number, number, number, number]]
       const onMove = (ev: PointerEvent) => {
         const dx = (ev.clientX - sx) / scale
         const dy = (ev.clientY - sy) / scale
         if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) < MIN_DRAG) return
         moved = true
-        setGesture({ kind: 'move', ids, dx, dy })
+        // snap: union box of the dragged set vs other elements + page bounds
+        const x0 = Math.min(...dragged.map(el => el.bounds[0] + dx))
+        const y0 = Math.min(...dragged.map(el => el.bounds[1] + dy))
+        const x1 = Math.max(...dragged.map(el => el.bounds[0] + el.bounds[2] + dx))
+        const y1 = Math.max(...dragged.map(el => el.bounds[1] + el.bounds[3] + dy))
+        const s = snapDelta([x0, y0, x1 - x0, y1 - y0], targets)
+        setGesture({ kind: 'move', ids, dx: dx + s.dx, dy: dy + s.dy, guides: s.guides })
       }
       const onUp = (ev: PointerEvent) => {
         removeEventListener('pointermove', onMove)
         removeEventListener('pointerup', onUp)
         setGesture(null)
         if (moved) {
-          const dx = Math.round((ev.clientX - sx) / scale)
-          const dy = Math.round((ev.clientY - sy) / scale)
-          if (dx || dy) runCommand(moveCmd(index, ids, dx, dy))
+          const dx = (ev.clientX - sx) / scale
+          const dy = (ev.clientY - sy) / scale
+          const x0 = Math.min(...dragged.map(el => el.bounds[0] + dx))
+          const y0 = Math.min(...dragged.map(el => el.bounds[1] + dy))
+          const x1 = Math.max(...dragged.map(el => el.bounds[0] + el.bounds[2] + dx))
+          const y1 = Math.max(...dragged.map(el => el.bounds[1] + el.bounds[3] + dy))
+          const s = snapDelta([x0, y0, x1 - x0, y1 - y0], targets)
+          const rdx = Math.round(dx + s.dx)
+          const rdy = Math.round(dy + s.dy)
+          if (rdx || rdy) runCommand(moveCmd(index, ids, rdx, rdy))
         }
       }
       addEventListener('pointermove', onMove)
@@ -327,6 +343,10 @@ export function EditorOverlay() {
         .map(el => (
           <div key={`drag-${el.elementId}`} className="pointer-events-none absolute border-2 border-accent" style={{ left: el.bounds[0], top: el.bounds[1], width: el.bounds[2], height: el.bounds[3], transform: `translate(${gesture.dx}px, ${gesture.dy}px)` }} aria-hidden="true" />
         ))}
+      {/* smart guides (magenta) during snapped move */}
+      {gesture?.kind === 'move' && gesture.guides.map((g, i) => g.axis === 'x'
+        ? <div key={`gx${i}`} aria-hidden="true" className="pointer-events-none absolute top-0 h-full w-px bg-fuchsia-500" style={{ left: g.at }} />
+        : <div key={`gy${i}`} aria-hidden="true" className="pointer-events-none absolute left-0 w-full h-px bg-fuchsia-500" style={{ top: g.at }} />)}
       {/* multi-selection: per-element outlines + group bounding box with 4 corner handles */}
       {(single ? [] : selEls).map(el => (
         <div key={`sel-${el.elementId}`} className="pointer-events-none absolute border-2 border-accent" style={{ left: el.bounds[0], top: el.bounds[1], width: el.bounds[2], height: el.bounds[3] }} aria-hidden="true" />

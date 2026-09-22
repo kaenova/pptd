@@ -9,7 +9,7 @@ import { EditorOverlay, editingTextEl } from './EditorOverlay'
 import { PropertyPanel } from './PropertyPanel'
 
 export function DeckCanvas() {
-  const { project, index, present, scale, playing, playToken, onSelect, editor, dispatch, runCommand } = useDeckCtx()
+  const { project, index, present, scale, playing, playToken, onSelect, editor, dispatch, runCommand, grid } = useDeckCtx()
   const [w, h] = project.size
   if (!project.pages[index]) return null
   const editActive = !present // overlay handles all tools (select + creation); playing only affects animation playback
@@ -28,6 +28,10 @@ export function DeckCanvas() {
         static={!present && !playing}
         editingId={editingEl ? editor.editingId ?? undefined : undefined}
       />
+      {editActive && grid && (
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-40"
+          style={{ backgroundImage: 'linear-gradient(to right, #0001 1px, transparent 1px), linear-gradient(to bottom, #0001 1px, transparent 1px)', backgroundSize: '10px 10px' }} />
+      )}
       {editActive && !editingEl && <EditorOverlay />}
       {editActive && <PropertyPanel />}
       {editingEl && (

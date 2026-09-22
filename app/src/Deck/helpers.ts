@@ -124,3 +124,50 @@ export function resizedElement(el: Element, nb: Bounds): Element {
   }
   return { ...el, bounds: nb }
 }
+
+/** E6 snapping -------------------------------------------------------------- */
+
+export type Guide = { axis: 'x' | 'y'; at: number }
+
+const SNAP_PX = 6
+
+/**
+ * Snap correction for a moving box vs targets (other elements + page bounds).
+ * Compares moving edges/center to target edges/center; returns the smallest
+ * [dx, dy] within threshold plus the matched guide lines to render.
+ */
+export function snapDelta(
+  box: Bounds,
+  targets: Bounds[],
+  threshold = SNAP_PX,
+): { dx: number; dy: number; guides: Guide[] } {
+  const mov = {
+    x: [box[0], box[0] + box[2] / 2, box[0] + box[2]],
+    y: [box[1], box[1] + box[3] / 2, box[1] + box[3]],
+  }
+  const best = { x: { d: threshold, at: [] as number[] }, y: { d: threshold, at: [] as number[] } }
+  for (const t of targets) {
+    const tgt = {
+      x: [t[0], t[0] + t[2] / 2, t[0] + t[2]],
+      y: [t[1], t[1] + t[3] / 2, t[1] + t[3]],
+    }
+    for (const ax of ['x', 'y'] as const) {
+      for (const m of mov[ax]) for (const g of tgt[ax]) {
+        const d = g - m
+        if (Math.abs(d) < Math.abs(best[ax].d)) { best[ax] = { d: Math.abs(d), at: [g] } }
+        else if (Math.abs(d) === Math.abs(best[ax].d) && !best[ax].at.includes(g)) best[ax].at.push(g)
+      }
+    }
+  }
+  let sdx = 0, sdy = 0
+  if (best.x.d < threshold) sdx = best.x.at[0] - nearest(mov.x, best.x.at[0])
+  if (best.y.d < threshold) sdy = best.y.at[0] - nearest(mov.y, best.y.at[0])
+  const guides: Guide[] = []
+  if (sdx) for (const at of best.x.at) guides.push({ axis: 'x', at })
+  if (sdy) for (const at of best.y.at) guides.push({ axis: 'y', at })
+  return { dx: sdx, dy: sdy, guides }
+}
+
+function nearest(vals: number[], target: number): number {
+  return vals.reduce((a, b) => (Math.abs(b - target) < Math.abs(a - target) ? b : a))
+}

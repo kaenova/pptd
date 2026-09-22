@@ -4,7 +4,7 @@
 import { useEffect, useRef, type MouseEvent, type ReactNode } from 'react'
 import { useDeckCtx } from './context'
 import { fitScale, newTextElement } from './helpers'
-import { addElementCmd, deleteCmd, duplicateCmd, reorderCmd } from './commands'
+import { addElementCmd, deleteCmd, duplicateCmd, reorderCmd, moveCmd } from './commands'
 import { DeckTool } from './Tool'
 
 // internal copy/paste clipboard (elements); module-level survives re-renders
@@ -53,6 +53,13 @@ export function DeckStage({ children }: { children: ReactNode }) {
       const sel = editor.selection
       if (!sel.length) return
       if (e.key === 'Escape') dispatch({ type: 'deselect' })
+      else if (e.key.startsWith('Arrow')) {
+        e.preventDefault()
+        const step = e.shiftKey ? 10 : 1
+        const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0
+        const dy = e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0
+        if (dx || dy) runCommand(moveCmd(index, sel, dx, dy))
+      }
       else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); runCommand(deleteCmd(index, sel)); dispatch({ type: 'deselect' }) }
       else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'd') { e.preventDefault(); runCommand(duplicateCmd(index, selectionEls)) }
       else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'c') { clipboard = selectionEls }

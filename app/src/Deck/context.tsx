@@ -22,7 +22,10 @@ interface DeckCtx {
   /** shape name for the shape tool (set by the shape picker) */
   shapeName: string
   editor: EditorState
+  /** 10px grid overlay toggle (G) */
+  grid: boolean
   setScale: (s: number) => void
+  setGrid: (g: boolean) => void
   setThumbW: (w: number) => void
   setTool: (t: Tool) => void
   setShapeName: (s: string) => void
