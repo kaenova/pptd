@@ -5,21 +5,26 @@ import { useEffect } from 'react'
 import { useDeckCtx } from './context'
 
 export function DeckTool() {
-  const { present, tool, setTool } = useDeckCtx()
+  const { present, tool, setTool, undo, redo } = useDeckCtx()
 
-  // shortcuts: V select, T text
+  // shortcuts: V select, T text, Ctrl/Cmd+Z undo, +Shift redo
   useEffect(() => {
     if (present) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey || e.altKey) return
       const t = e.target as HTMLElement
       if (t.isContentEditable || t.tagName === 'INPUT' || t.tagName === 'TEXTAREA') return
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault()
+        e.shiftKey ? redo() : undo()
+        return
+      }
+      if (e.metaKey || e.ctrlKey || e.altKey) return
       if (e.key === 'v') setTool('select')
       if (e.key === 't') setTool('text')
     }
     addEventListener('keydown', onKey)
     return () => removeEventListener('keydown', onKey)
-  }, [present, setTool])
+  }, [present, setTool, undo, redo])
 
   if (present) return null
   const btn = (active: boolean) =>

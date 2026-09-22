@@ -1,40 +1,18 @@
 /**
- * DeckCanvas — scaled canvas wrap + DeckView.
+ * DeckCanvas — scaled canvas wrap + DeckView + EditorOverlay + TextEditor.
  */
 import { DeckView } from '../Renderer'
-import type { LoadedProject, TextElement } from '../types'
 import { useDeckCtx } from './context'
-import { moveBounds } from './helpers'
+import { patchTextCmd } from './commands'
 import { TextEditor } from './TextEditor'
-
-/** Immutable patch: replace an element's text content. */
-export function patchText(pageIndex: number, elementId: string, text: string) {
-  return (p: LoadedProject): LoadedProject => ({
-    ...p,
-    pages: p.pages.map((pg, i) =>
-      i !== pageIndex ? pg : { ...pg, elements: pg.elements.map(e => (e.elementId === elementId && e.elementType === 'text' ? { ...e, content: { ...e.content, text } } : e)) }),
-  })
-}
-
-/** Immutable patch: move an element by canvas px. */
-export function patchMove(pageIndex: number, elementId: string, dx: number, dy: number) {
-  return (p: LoadedProject): LoadedProject => ({
-    ...p,
-    pages: p.pages.map((pg, i) =>
-      i !== pageIndex ? pg : { ...pg, elements: pg.elements.map(e => (e.elementId === elementId ? { ...e, bounds: moveBounds(e.bounds, dx, dy) } : e)) }),
-  })
-}
-
-// --- canvas ------------------------------------------------------------------
+import { EditorOverlay, editingTextEl } from './EditorOverlay'
 
 export function DeckCanvas() {
-  const { project, index, present, scale, playing, playToken, onSelect, tool, selectedId, editingId, setSelectedId, setEditingId, patchProject } = useDeckCtx()
+  const { project, index, present, scale, playing, playToken, onSelect, tool, editor, dispatch, runCommand } = useDeckCtx()
   const [w, h] = project.size
   if (!project.pages[index]) return null
   const editActive = !present && tool === 'select' // playing only affects animation playback, not interaction
-  const editingEl = editActive
-    ? (project.pages[index].elements.find(e => e.elementId === editingId && e.elementType === 'text') as TextElement | undefined)
-    : undefined
+  const editingEl = editActive ? editingTextEl(project.pages[index], editor.editingId) : undefined
   return (
     <div
       id="canvasWrap"
@@ -47,19 +25,11 @@ export function DeckCanvas() {
         index={index}
         onSelect={onSelect}
         static={!present && !playing}
-        interactive={editActive}
-        selectedId={editActive ? (selectedId ?? undefined) : undefined}
-        editingId={editingEl ? (editingId ?? undefined) : undefined}
-        onElementSelect={editActive && !editingEl ? el => setSelectedId(el.elementId) : undefined}
-        onElementEdit={editActive && !editingEl ? el => {
-          setSelectedId(el.elementId)
-          if (el.elementType === 'text') setEditingId(el.elementId)
-        } : undefined}
-        onElementMove={editActive && !editingEl && patchProject ? (el, dx, dy) => patchProject(patchMove(index, el.elementId, dx, dy)) : undefined}
-        dragScale={scale}
+        editingId={editingEl ? editor.editingId ?? undefined : undefined}
       />
-      {editingEl && patchProject && (
-        <TextEditor el={editingEl} onCommit={text => patchProject(patchText(index, editingEl.elementId, text))} onExit={() => setEditingId(null)} />
+      {editActive && !editingEl && <EditorOverlay />}
+      {editingEl && (
+        <TextEditor el={editingEl} onCommit={text => runCommand(patchTextCmd(index, editingEl, text))} onExit={() => dispatch({ type: 'startEdit', id: null })} />
       )}
     </div>
   )

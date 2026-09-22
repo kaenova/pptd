@@ -4,12 +4,11 @@
 import { useEffect, useRef, type MouseEvent, type ReactNode } from 'react'
 import { useDeckCtx } from './context'
 import { fitScale, newTextElement } from './helpers'
+import { addElementCmd } from './commands'
 import { DeckTool } from './Tool'
 
-// --- stage -------------------------------------------------------------------
-
 export function DeckStage({ children }: { children: ReactNode }) {
-  const { project, index, present, replay, onSelect, scale, tool, setTool, selectedId, setSelectedId, editingId, setEditingId, patchProject, setScale: setCtxScale } = useDeckCtx()
+  const { project, index, present, replay, onSelect, scale, tool, setTool, editor, dispatch, runCommand, setScale: setCtxScale } = useDeckCtx()
   const stageRef = useRef<HTMLDivElement>(null)
 
   // RO → fit(); scale lives in Root context so Canvas (and anything else) reads it
@@ -29,29 +28,26 @@ export function DeckStage({ children }: { children: ReactNode }) {
   // text tool: click on canvas → new text element at click point (canvas coords), select + edit it
   const addTextAt = (e: MouseEvent) => {
     const wrap = (e.target as Element).closest('#canvasWrap')
-    if (!wrap || !patchProject) return
+    if (!wrap) return
     const r = wrap.getBoundingClientRect()
     const x = (e.clientX - r.left) / scale
     const y = (e.clientY - r.top) / scale
     const el = newTextElement(x, y)
-    patchProject(p => ({
-      ...p,
-      pages: p.pages.map((pg, i) => (i === index ? { ...pg, elements: [...pg.elements, el] } : pg)),
-    }))
-    setSelectedId(el.elementId)
-    setEditingId(el.elementId)
+    runCommand(addElementCmd(index, el))
+    dispatch({ type: 'select', ids: [el.elementId] })
+    dispatch({ type: 'startEdit', id: el.elementId })
     setTool('select')
   }
 
   // Esc (outside the text editor, which stops its own keys) → drop selection
   useEffect(() => {
-    if (present || !selectedId || editingId) return
+    if (present || !editor.selection.length || editor.editingId) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setSelectedId(null)
+      if (e.key === 'Escape') dispatch({ type: 'deselect' })
     }
     addEventListener('keydown', onKey)
     return () => removeEventListener('keydown', onKey)
-  }, [present, selectedId, editingId, setSelectedId])
+  }, [present, editor, dispatch])
 
   return (
     <div
@@ -59,9 +55,8 @@ export function DeckStage({ children }: { children: ReactNode }) {
       className={`relative flex h-full min-w-0 flex-1 items-center justify-center${tool === 'text' ? ' cursor-text' : ''}${!present ? ' select-none' : ''}`}
       onClick={e => {
         if (tool === 'text') addTextAt(e)
-        // empty canvas with a selection → deselect; otherwise (re)start slide animations
-        else if (selectedId && !editingId) setSelectedId(null)
-        else if (!onSelect && !present) replay()
+        // overlay handles deselect; replay only when nothing is selected
+        else if (!editor.selection.length && !onSelect && !present) replay()
       }}
     >
       <DeckTool />
