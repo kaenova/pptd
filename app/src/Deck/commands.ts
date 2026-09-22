@@ -95,3 +95,52 @@ export function pageCmd(pageIndex: number, before: Page, after: Page, label: str
   const swap = (p: LoadedProject, pg: Page) => ({ ...p, pages: p.pages.map((q, i) => (i === pageIndex ? pg : q)) })
   return { label, do: p => swap(p, after), undo: p => swap(p, before) }
 }
+
+/** Delete elements; undo re-inserts at their original indices. */
+export function deleteCmd(pageIndex: number, ids: string[]): Command {
+  const indices = new Map<number, Element>()
+  const restore = (p: LoadedProject) =>
+    mapPage(p, pageIndex, pg => {
+      const els = [...pg.elements.filter(e => !ids.includes(e.elementId))]
+      for (const [i, e] of [...indices].sort((a, b) => a[0] - b[0])) els.splice(Math.min(i, els.length), 0, e)
+      return { ...pg, elements: els }
+    })
+  return {
+    label: 'delete',
+    do: p => {
+      const els = p.pages[pageIndex].elements
+      els.forEach((e, i) => { if (ids.includes(e.elementId)) indices.set(i, e) })
+      return mapPage(p, pageIndex, pg => ({ ...pg, elements: pg.elements.filter(e => !ids.includes(e.elementId)) }))
+    },
+    undo: restore,
+  }
+}
+
+/** Duplicate elements with fresh ids, offset +16,+16; undo removes them. */
+export function duplicateCmd(pageIndex: number, els: Element[]): Command {
+  const copies = els.map(e => ({
+    ...e,
+    elementId: `${e.elementType}-${crypto.randomUUID().slice(0, 8)}`,
+    bounds: [e.bounds[0] + 16, e.bounds[1] + 16, e.bounds[2], e.bounds[3]] as [number, number, number, number],
+  }))
+  return {
+    label: 'duplicate',
+    do: p => mapPage(p, pageIndex, pg => ({ ...pg, elements: [...pg.elements, ...copies] })),
+    undo: p => mapPage(p, pageIndex, pg => ({ ...pg, elements: pg.elements.filter(e => !copies.some(c => c.elementId === e.elementId)) })),
+  }
+}
+
+/** Move elements from one page to another; undo moves them back (order preserved per group). */
+export function crossPageMoveCmd(from: number, to: number, ids: string[]): Command {
+  const move = (p: LoadedProject, src: number, dst: number) => {
+    const els = p.pages[src].elements.filter(e => ids.includes(e.elementId))
+    return {
+      ...p,
+      pages: p.pages.map((pg, i) =>
+        i === src ? { ...pg, elements: pg.elements.filter(e => !ids.includes(e.elementId)) }
+        : i === dst ? { ...pg, elements: [...pg.elements, ...els] }
+        : pg),
+    }
+  }
+  return { label: 'move across pages', do: p => move(p, from, to), undo: p => move(p, to, from) }
+}

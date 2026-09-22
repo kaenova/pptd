@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Element, TextElement } from '../types'
 import { useDeckCtx } from './context'
 import { addElementCmd, moveCmd, multiSnapshotCmd } from './commands'
-import { localDelta, resizeBounds, snapAngle, normAngle, resizedElement, rectBounds, newTextElement, newShapeElement, newLineElement, newImageElement, newIconElement, type Bounds, type Handle } from './helpers'
+import { localDelta, resizeBounds, snapAngle, normAngle, resizedElement, rectBounds, newTextElement, newShapeElement, newLineElement, newImageElement, newIconElement, MIN_SIZE, type Bounds, type Handle } from './helpers'
 
 const MIN_DRAG = 2 // px (screen) before a pointer press counts as a drag
 const HANDLES: Handle[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']
@@ -73,6 +73,44 @@ export function EditorOverlay() {
       setGesture(null)
       const after = resizedElement(el, last)
       if (after !== el && (after.bounds !== el.bounds)) runCommand(multiSnapshotCmd(index, [el], [after], 'resize'))
+    }
+    addEventListener('pointermove', onMove)
+    addEventListener('pointerup', onUp)
+  }
+
+  // group resize: drag corner of the multi-selection bounding box; every element scales by the same factor (anchored at the opposite corner)
+  const startGroupResize = (e: React.PointerEvent, handle: Handle) => {
+    if (e.button !== 0) return
+    e.stopPropagation()
+    const box: [number, number] = selEls.reduce((acc, el) => [Math.min(acc[0], el.bounds[0]), Math.min(acc[1], el.bounds[1])], [Infinity, Infinity] as [number, number])
+    const x1 = Math.max(...selEls.map(el => el.bounds[0] + el.bounds[2]))
+    const y1 = Math.max(...selEls.map(el => el.bounds[1] + el.bounds[3]))
+    const g0: Bounds = [box[0], box[1], x1 - box[0], y1 - box[1]]
+    const sx = e.clientX
+    const sy = e.clientY
+    let last = g0
+    const onMove = (ev: PointerEvent) => {
+      const dx = (ev.clientX - sx) / scale
+      const dy = (ev.clientY - sy) / scale
+      last = resizeBounds(g0, handle, dx, dy, { ratio: false })
+      setGesture({ kind: 'resize', id: '__group__', bounds: last })
+    }
+    const onUp = () => {
+      removeEventListener('pointermove', onMove)
+      removeEventListener('pointerup', onUp)
+      setGesture(null)
+      if (last === g0) return
+      const fx = last[2] / g0[2]
+      const fy = last[3] / g0[3]
+      if (fx === 1 && fy === 1) return
+      const before = selEls
+      const after = before.map(el => resizedElement(el, [
+        Math.round(g0[0] + (el.bounds[0] - g0[0]) * fx),
+        Math.round(g0[1] + (el.bounds[1] - g0[1]) * fy),
+        Math.max(MIN_SIZE, Math.round(el.bounds[2] * fx)),
+        Math.max(MIN_SIZE, Math.round(el.bounds[3] * fy)),
+      ]))
+      runCommand(multiSnapshotCmd(index, before, after, 'group resize'))
     }
     addEventListener('pointermove', onMove)
     addEventListener('pointerup', onUp)
@@ -186,8 +224,8 @@ export function EditorOverlay() {
     const el = hit(e)
     if (el) {
       const additive = e.shiftKey
-      if (!additive && !selection.includes(el.elementId)) dispatch({ type: 'select', ids: [el.elementId] })
-      else if (additive && selection.includes(el.elementId)) dispatch({ type: 'select', ids: [el.elementId], toggle: true })
+      if (additive) dispatch({ type: 'select', ids: [el.elementId], toggle: true }) // reducer: absent → add, present → remove
+      else if (!selection.includes(el.elementId)) dispatch({ type: 'select', ids: [el.elementId] })
       const ids = additive
         ? (selection.includes(el.elementId) ? selection.filter(id => id !== el.elementId) : [...selection, el.elementId])
         : (selection.includes(el.elementId) ? selection : [el.elementId])
@@ -289,10 +327,32 @@ export function EditorOverlay() {
         .map(el => (
           <div key={`drag-${el.elementId}`} className="pointer-events-none absolute border-2 border-accent" style={{ left: el.bounds[0], top: el.bounds[1], width: el.bounds[2], height: el.bounds[3], transform: `translate(${gesture.dx}px, ${gesture.dy}px)` }} aria-hidden="true" />
         ))}
-      {/* multi-selection: per-element outlines, no handles */}
+      {/* multi-selection: per-element outlines + group bounding box with 4 corner handles */}
       {(single ? [] : selEls).map(el => (
         <div key={`sel-${el.elementId}`} className="pointer-events-none absolute border-2 border-accent" style={{ left: el.bounds[0], top: el.bounds[1], width: el.bounds[2], height: el.bounds[3] }} aria-hidden="true" />
       ))}
+      {!single && selEls.length > 1 && (() => {
+        const b = selEls.reduce((acc, el) => [
+          Math.min(acc[0], el.bounds[0]), Math.min(acc[1], el.bounds[1]),
+          0, 0,
+        ] as Bounds, [Infinity, Infinity, 0, 0])
+        const x1 = Math.max(...selEls.map(e => e.bounds[0] + e.bounds[2]))
+        const y1 = Math.max(...selEls.map(e => e.bounds[1] + e.bounds[3]))
+        const gb: Bounds = gesture?.kind === 'resize' && gesture.id === '__group__'
+          ? gesture.bounds : [b[0], b[1], x1 - b[0], y1 - b[1]]
+        return (
+          <div className="absolute" style={{ left: gb[0], top: gb[1], width: gb[2], height: gb[3] }}
+            draggable onDragStart={e => { e.dataTransfer.setData('application/x-pptd-ids', JSON.stringify(selection)); e.dataTransfer.effectAllowed = 'move' }}>
+            <div className="pointer-events-none absolute inset-0 border border-accent border-dashed" aria-hidden="true" />
+            {(['nw', 'ne', 'se', 'sw'] as Handle[]).map(h => (
+              <div key={h} role="presentation" aria-label={`Resize ${h}`}
+                className="absolute size-[9px] -translate-x-1/2 -translate-y-1/2 rounded-[2px] border border-accent bg-white"
+                style={{ left: HANDLE_POS[h].left, top: HANDLE_POS[h].top, cursor: HANDLE_CURSOR[h] }}
+                onPointerDown={e => startGroupResize(e, h)} />
+            ))}
+          </div>
+        )
+      })()}
       {/* single selection: box + 8 resize handles + rotation handle (text: no rotation per spec) */}
       {single && (() => {
         const g = gesture?.kind === 'resize' && gesture.id === single.elementId ? gesture
@@ -301,7 +361,12 @@ export function EditorOverlay() {
         const rot = g?.kind === 'rotate' ? g.angle : ((single as { rotation?: number }).rotation ?? 0)
         const isText = single.elementType === 'text'
         return (
-          <div className="absolute" style={{ left: b[0], top: b[1], width: b[2], height: b[3], transform: `rotate(${rot}deg)`, transformOrigin: 'center' }}>
+          <div
+            className="absolute"
+            style={{ left: b[0], top: b[1], width: b[2], height: b[3], transform: `rotate(${rot}deg)`, transformOrigin: 'center' }}
+            draggable
+            onDragStart={e => { e.dataTransfer.setData('application/x-pptd-ids', JSON.stringify(selection)); e.dataTransfer.effectAllowed = 'move' }}
+          >
             <div className="pointer-events-none absolute inset-0 border-2 border-accent" aria-hidden="true" />
             {HANDLES.map(h => (
               <div

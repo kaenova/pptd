@@ -4,8 +4,12 @@
 import { useEffect, useRef, type MouseEvent, type ReactNode } from 'react'
 import { useDeckCtx } from './context'
 import { fitScale, newTextElement } from './helpers'
-import { addElementCmd } from './commands'
+import { addElementCmd, deleteCmd, duplicateCmd, reorderCmd } from './commands'
 import { DeckTool } from './Tool'
+
+// internal copy/paste clipboard (elements); module-level survives re-renders
+// ponytail: not a clipboard API integration — system copy of elements out of scope
+let clipboard: import('../types').Element[] = []
 
 export function DeckStage({ children }: { children: ReactNode }) {
   const { project, index, present, replay, onSelect, scale, tool, setTool, editor, dispatch, runCommand, setScale: setCtxScale } = useDeckCtx()
@@ -39,15 +43,30 @@ export function DeckStage({ children }: { children: ReactNode }) {
     setTool('select')
   }
 
-  // Esc (outside the text editor, which stops its own keys) → drop selection
+  // editor keys: Esc deselect, Delete/Backspace delete, Ctrl+D duplicate, [/] layer, Ctrl+C/V copy/paste
+  const selectionEls = project.pages[index]?.elements.filter(e => editor.selection.includes(e.elementId)) ?? []
   useEffect(() => {
-    if (present || !editor.selection.length || editor.editingId) return
+    if (present) return
     const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement
+      if (t.isContentEditable || t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT') return
+      const sel = editor.selection
+      if (!sel.length) return
       if (e.key === 'Escape') dispatch({ type: 'deselect' })
+      else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); runCommand(deleteCmd(index, sel)); dispatch({ type: 'deselect' }) }
+      else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'd') { e.preventDefault(); runCommand(duplicateCmd(index, selectionEls)) }
+      else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'c') { clipboard = selectionEls }
+      else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'v') {
+        if (!clipboard.length) return
+        e.preventDefault()
+        runCommand(duplicateCmd(index, clipboard))
+      }
+      else if (e.key === ']') { e.preventDefault(); runCommand(reorderCmd(index, sel, e.shiftKey ? 'front' : 'forward')) }
+      else if (e.key === '[') { e.preventDefault(); runCommand(reorderCmd(index, sel, e.shiftKey ? 'back' : 'backward')) }
     }
     addEventListener('keydown', onKey)
     return () => removeEventListener('keydown', onKey)
-  }, [present, editor, dispatch])
+  }, [present, index, editor, dispatch, runCommand, selectionEls])
 
   return (
     <div

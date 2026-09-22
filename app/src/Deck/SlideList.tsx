@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { DeckView } from '../Renderer'
 import { useDeckCtx } from './context'
 import { thumbScale } from './helpers'
+import { crossPageMoveCmd } from './commands'
 
 // --- sidebar -----------------------------------------------------------------
 
@@ -29,7 +30,7 @@ function DeckSlide({ slideIndex, thumbW, active, onClick }: {
   active: boolean
   onClick: () => void
 }) {
-  const { project } = useDeckCtx()
+  const { project, index, runCommand, dispatch } = useDeckCtx()
   const btnRef = useRef<HTMLButtonElement>(null)
   const [measured, setMeasured] = useState(thumbW)
   const setThumbW = useDeckCtx().setThumbW
@@ -55,6 +56,14 @@ function DeckSlide({ slideIndex, thumbW, active, onClick }: {
       type="button"
       className={`relative cursor-pointer rounded-lg border-2 bg-panel-raised p-1.5${active ? ' border-accent' : ' border-thumb'}`}
       onClick={e => { e.stopPropagation(); onClick() }}
+      onDragOver={e => { if (e.dataTransfer.types.includes('application/x-pptd-ids') && slideIndex !== index) e.preventDefault() }}
+      onDrop={e => {
+        const ids = e.dataTransfer.getData('application/x-pptd-ids')
+        if (!ids || slideIndex === index) return
+        e.preventDefault(); e.stopPropagation()
+        runCommand(crossPageMoveCmd(index, slideIndex, JSON.parse(ids)))
+        dispatch({ type: 'deselect' })
+      }}
     >
       <span className="relative block w-full overflow-hidden rounded" style={{ aspectRatio: `${w} / ${h}` }}>
         <span

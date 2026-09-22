@@ -97,3 +97,42 @@ describe('commands', () => {
     assert.deepEqual(cmd.undo(p1).pages[0].elements[0].bounds, [0, 0, 100, 50])
   })
 })
+
+import { deleteCmd, duplicateCmd, crossPageMoveCmd, reorderCmd } from '../src/Deck/commands'
+
+describe('E5 commands', () => {
+  const a = el('a'), b = el('b', 10, 10), c = el('c', 20, 20)
+  const proj = (els: Element[], extraPages: Element[][] = []): LoadedProject =>
+    ({ title: 't', size: [960, 540], theme: {} as never, pages: [page(...els), ...extraPages.map(e => page(...e))] } as LoadedProject)
+
+  it('deleteCmd removes and undo restores original indices', () => {
+    const p = proj([a, b, c])
+    const cmd = deleteCmd(0, ['b'])
+    const done = cmd.do(p)
+    assert.deepEqual(done.pages[0].elements.map(e => e.elementId), ['a', 'c'])
+    assert.deepEqual(cmd.undo(done).pages[0].elements.map(e => e.elementId), ['a', 'b', 'c'])
+  })
+  it('duplicateCmd adds offset copies; undo removes only copies', () => {
+    const cmd = duplicateCmd(0, [b])
+    const done = cmd.do(proj([a, b]))
+    assert.equal(done.pages[0].elements.length, 3)
+    assert.deepEqual(done.pages[0].elements[2].bounds, [26, 26, 100, 50])
+    assert.deepEqual(cmd.undo(done).pages[0].elements.map(e => e.elementId), ['a', 'b'])
+  })
+  it('crossPageMoveCmd moves and undo restores', () => {
+    const p = proj([a, b], [[c]])
+    const cmd = crossPageMoveCmd(0, 1, ['b'])
+    const done = cmd.do(p)
+    assert.deepEqual(done.pages[0].elements.map(e => e.elementId), ['a'])
+    assert.deepEqual(done.pages[1].elements.map(e => e.elementId), ['c', 'b'])
+    assert.deepEqual(cmd.undo(done).pages[0].elements.map(e => e.elementId), ['a', 'b'])
+    assert.deepEqual(cmd.undo(done).pages[1].elements.map(e => e.elementId), ['c'])
+  })
+  it('reorderCmd forward/back/front/back', () => {
+    const p = proj([a, b, c])
+    assert.deepEqual(reorderCmd(0, ['a'], 'forward').do(p).pages[0].elements.map(e => e.elementId), ['b', 'a', 'c'])
+    assert.deepEqual(reorderCmd(0, ['c'], 'backward').do(p).pages[0].elements.map(e => e.elementId), ['a', 'c', 'b'])
+    assert.deepEqual(reorderCmd(0, ['a'], 'front').do(p).pages[0].elements.map(e => e.elementId), ['b', 'c', 'a'])
+    assert.deepEqual(reorderCmd(0, ['c'], 'back').do(p).pages[0].elements.map(e => e.elementId), ['c', 'a', 'b'])
+  })
+})
