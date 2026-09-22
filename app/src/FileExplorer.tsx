@@ -30,19 +30,11 @@ export function FileExplorer({ project, onFiles, currentSlide, onSlideChange, on
       onDragOver={event => event.preventDefault()}
       onDrop={onDrop}
     >
-      <div className="flex min-h-[72px] items-center justify-between border-b border-line-soft px-4 py-3">
+      <div className="flex min-h-[72px] items-center border-b border-line-soft px-4 py-3">
         <div>
           <div className="text-[10px] font-semibold uppercase tracking-[.12em] text-muted">Workspace</div>
-          <h1 className="mt-[3px] text-[15px] tracking-tight">File Explorer</h1>
+          <h1 className="mt-[3px] text-[15px] tracking-tight">PPTD Viewer and Editor</h1>
         </div>
-        <button
-          className="size-7 rounded-md border border-line bg-transparent text-lg leading-none text-dim hover:bg-panel-raised hover:text-fg"
-          type="button"
-          onClick={chooseFolder}
-          aria-label="Open PPTD folder"
-        >
-          ＋
-        </button>
       </div>
       <input
         ref={inputRef}

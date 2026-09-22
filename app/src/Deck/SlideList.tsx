@@ -5,14 +5,17 @@ import { useEffect, useRef, useState } from 'react'
 import { DeckView } from '../Renderer'
 import { useDeckCtx } from './context'
 import { thumbScale } from './helpers'
+import { useDragResize } from '../useDragResize'
 
 // --- sidebar -----------------------------------------------------------------
 
 export function DeckSlideList() {
   const { project, index, present, selectSlide, thumbW } = useDeckCtx()
+  const [width, onResize] = useDragResize(176, 'x', 128, 480, -1) // anchored right — drag left = wider
   if (present) return null
   return (
-    <aside className="flex w-[176px] max-sm:w-[128px] flex-none flex-col gap-2 border-r border-line-soft bg-panel p-3 select-none" aria-label="Slide previews">
+    <aside style={{ width }} className="relative flex flex-none flex-col gap-2 border-r border-line-soft bg-panel p-3 select-none" aria-label="Slide previews">
+      <div className="absolute inset-y-0 right-0 w-1.5 cursor-col-resize translate-x-1/2" onPointerDown={onResize} role="separator" aria-orientation="vertical" />
       <h2 className="text-[11px] font-semibold uppercase tracking-[.12em] text-muted">Slides</h2>
       <div className="flex flex-col gap-2 overflow-auto">
         {project.pages.map((_, i) => (

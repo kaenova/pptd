@@ -1,5 +1,5 @@
 /**
- * DeckStage — centers canvas, RO → fitScale, click = replay (edit mode).
+ * DeckStage — centers canvas, RO → fitScale; click outside canvas deselects.
  */
 import { useEffect, useRef, type MouseEvent, type ReactNode } from 'react'
 import { useDeckCtx } from './context'
@@ -12,7 +12,7 @@ import { DeckTool } from './Tool'
 let clipboard: import('../types').Element[] = []
 
 export function DeckStage({ children }: { children: ReactNode }) {
-  const { project, index, present, replay, onSelect, scale, tool, setTool, editor, dispatch, runCommand, setScale: setCtxScale } = useDeckCtx()
+  const { project, index, present, scale, tool, setTool, editor, dispatch, runCommand, setScale: setCtxScale } = useDeckCtx()
   const stageRef = useRef<HTMLDivElement>(null)
 
   // RO → fit(); scale lives in Root context so Canvas (and anything else) reads it
@@ -81,10 +81,8 @@ export function DeckStage({ children }: { children: ReactNode }) {
       className={`relative flex h-full min-w-0 flex-1 items-center justify-center${tool === 'text' ? ' cursor-text' : ''}${!present ? ' select-none' : ''}`}
       onClick={e => {
         if (tool === 'text') addTextAt(e)
-        // click outside the canvas (stage chrome) → deselect, Figma-style
-        else if (!present && !(e.target as Element).closest('#canvasWrap') && editor.selection.length) dispatch({ type: 'deselect' })
-        // overlay handles deselect; replay only when nothing is selected
-        else if (!editor.selection.length && !onSelect && !present) replay()
+        // click outside the canvas (stage chrome / toolbar & its popovers) → deselect, Figma-style
+        else if (!present && !(e.target as Element).closest('#canvasWrap, [data-deck-tools]') && editor.selection.length) dispatch({ type: 'deselect' })
       }}
     >
       <DeckTool />

@@ -120,10 +120,14 @@ describe('creation factories', () => {
     assert.deepEqual(s.fill, { type: 'solid', color: '$primary' })
     assert.notEqual(s.elementId, newShapeElement('rect', [0, 0, 1, 1]).elementId)
   })
-  it('newLineElement: viewBox = bounds size, diagonal path', () => {
-    const l = newLineElement([10, 20, 100, 50])
+  it('newLineElement: viewBox = bounds size, diagonal path (any drag direction)', () => {
+    const l = newLineElement(10, 20, 110, 70)
+    assert.deepEqual(l.bounds, [10, 20, 100, 50])
     assert.deepEqual(l.viewBox, [100, 50])
     assert.equal(l.points, '0,0 100,50')
+    const rev = newLineElement(110, 70, 10, 20) // dragged bottom-right → top-left
+    assert.deepEqual(rev.bounds, [10, 20, 100, 50])
+    assert.equal(rev.points, '100,50 0,0')
   })
   it('newImageElement/newIconElement defaults', () => {
     assert.deepEqual(newImageElement('blob:x', [0, 0, 10, 10]).fit, { mode: 'cover' })

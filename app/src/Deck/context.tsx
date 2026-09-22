@@ -7,8 +7,16 @@ import type { ComponentSelection } from '../select'
 import type { Command } from './commands'
 import type { EditorAction, EditorState } from './editorState'
 
-/** Active edit tool (Figma-style). shape/line/image create by dragging on canvas. */
-export type Tool = 'select' | 'text' | 'shape' | 'line' | 'image' | 'icon'
+/** Active edit tool (Figma-style). shape/line/image create by dragging on canvas; comment pins a comment on a component. */
+export type Tool = 'select' | 'text' | 'shape' | 'line' | 'image' | 'icon' | 'comment'
+
+/** Feature flags for DeckRoot. */
+export interface DeckFeatures {
+  /** 'read' disables editing UI/commands; default 'edit' */
+  mode?: 'read' | 'edit'
+  /** highlight hovered elements on the canvas; default false */
+  highlightHover?: boolean
+}
 
 interface DeckCtx {
   project: LoadedProject
@@ -26,6 +34,10 @@ interface DeckCtx {
   editor: EditorState
   /** 10px grid overlay toggle (G) */
   grid: boolean
+  /** 'read' | 'edit' feature flag; default 'edit' */
+  mode: 'read' | 'edit'
+  /** highlight hovered elements; feature flag, default false */
+  highlightHover: boolean
   setScale: (s: number) => void
   setGrid: (g: boolean) => void
   setThumbW: (w: number) => void
@@ -42,6 +54,8 @@ interface DeckCtx {
   replay: () => void
   selectSlide: (i: number) => void
   onSelect?: (selection: ComponentSelection) => void
+  /** Comment pin (Figma-style): componentRef is "*.page>{elementId}". */
+  onComment?: (componentRef: string, comment?: string) => void
 }
 
 const Ctx = createContext<DeckCtx | null>(null)
@@ -52,5 +66,5 @@ function useDeckCtx(): DeckCtx {
   return ctx
 }
 
-export type { DeckCtx }
+export type { DeckCtx, DeckFeatures }
 export { Ctx, useDeckCtx }

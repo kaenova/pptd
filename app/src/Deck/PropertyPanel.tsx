@@ -8,6 +8,7 @@ import { ArrowDown, ArrowDownToLine, ArrowUp, ArrowUpToLine } from 'lucide-react
 import type { Border, Element, Fill, ImageElement, IconElement, LineElement, LoadedProject, Page, Shadow, ShapeElement, TextElement, TextContent } from '../types'
 import { useDeckCtx } from './context'
 import { multiSnapshotCmd, pageCmd, reorderCmd } from './commands'
+import { ColorPicker, Dropdown } from './pickers'
 
 const FONT_STACKS = ['inherit', 'sans-serif', 'serif', 'monospace', 'cursive', 'fantasy'] as const
 
@@ -35,9 +36,7 @@ function ColorField({ title, value, onChange }: { title: string; value: string |
     <label className={row} title={title}>
       <span className={label}>{title}</span>
       <span className="flex items-center gap-1.5">
-        <input type="color" className="size-6 cursor-pointer rounded border border-line bg-transparent p-0"
-          value={/^#[0-9a-fA-F]{6}$/.test(value ?? '') ? value : '#000000'}
-          onChange={e => onChange(e.target.value)} />
+        <ColorPicker title={title} value={value} onChange={onChange} size="sm" />
         <input type="text" className="w-[76px] rounded-md border border-line bg-transparent px-1 py-0.5 text-[11px] text-fg outline-none focus:border-accent"
           value={value ?? ''} placeholder="$primary" onChange={e => onChange(e.target.value)} />
       </span>
@@ -71,10 +70,8 @@ function BorderEditor({ border, onChange }: { border: Border | undefined; onChan
         <span className="flex gap-1">
           <button className={`rounded-md border px-2 py-0.5 text-[11px] ${border ? 'border-accent' : 'border-line'} hover:bg-panel-raised`}
             onClick={() => onChange(border ? undefined : { style: 'solid', width: 1, color: '#000000' })}>{border ? 'on' : 'off'}</button>
-          {border && <select className="rounded-md border border-line bg-transparent px-1 text-[11px]" value={border.style ?? 'solid'}
-            onChange={e => set({ style: e.target.value as Border['style'] })}>
-            <option value="solid">solid</option><option value="dash">dash</option><option value="dot">dot</option>
-          </select>}
+          {border && <Dropdown title="border style" value={border.style ?? 'solid'} options={[{ value: 'solid', label: 'solid' }, { value: 'dash', label: 'dash' }, { value: 'dot', label: 'dot' }] as const}
+            onChange={v => set({ style: v })} />}
         </span>
       </div>
       {border && <NumField title="width" value={border.width} onChange={n => set({ width: n })} />}
@@ -195,10 +192,9 @@ function TextPanel({ el, patch }: { el: TextElement; patch: (fn: (e: Element) =>
       <NumField title="lineHeight" value={c.lineHeight} step={0.1} onChange={n => set({ lineHeight: n })} />
       <div className={row}>
         <span className={label}>font</span>
-        <select className={input} value={typeof c.fontFamily === 'string' ? c.fontFamily : 'inherit'}
-          onChange={e => set({ fontFamily: e.target.value === 'inherit' ? undefined : e.target.value })}>
-          {FONT_STACKS.map(f => <option key={f} value={f}>{f}</option>)}
-        </select>
+        <Dropdown className="justify-self-end" title="font" value={typeof c.fontFamily === 'string' ? c.fontFamily : 'inherit'}
+          options={FONT_STACKS.map(f => ({ value: f, label: f }))}
+          onChange={v => set({ fontFamily: v === 'inherit' ? undefined : v })} />
       </div>
       <ColorField title="background" value={c.backgroundColor} onChange={v => set({ backgroundColor: v || undefined })} />
     </>
@@ -229,10 +225,8 @@ function ImagePanel({ el, patch }: { el: ImageElement; patch: (fn: (e: Element) 
     <>
       <div className={row}>
         <span className={label}>fit</span>
-        <select className={input} value={el.fit?.mode ?? 'cover'}
-          onChange={e => patch(x => ({ ...(x as ImageElement), fit: { mode: e.target.value as 'cover' | 'contain' | 'fill' } }), 'fit')}>
-          <option value="cover">cover</option><option value="contain">contain</option><option value="fill">fill</option>
-        </select>
+        <Dropdown className="justify-self-end" title="fit" value={el.fit?.mode ?? 'cover'} options={[{ value: 'cover', label: 'cover' }, { value: 'contain', label: 'contain' }, { value: 'fill', label: 'fill' }] as const}
+          onChange={v => patch(x => ({ ...(x as ImageElement), fit: { mode: v } }), 'fit')} />
       </div>
       <BorderEditor border={el.border} onChange={b => patch(e => ({ ...(e as ImageElement), border: b }), 'border')} />
       <ShadowEditor shadow={el.shadow} onChange={s => patch(e => ({ ...(e as ImageElement), shadow: s }), 'shadow')} />

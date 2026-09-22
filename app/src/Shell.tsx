@@ -4,6 +4,7 @@ import { folderSource, loadProject, stripRoot, type FileSource } from './load'
 import { Viewer } from './Viewer'
 import { FileExplorer } from './FileExplorer'
 import { FilePreviewer } from './FilePreviewer'
+import { useDragResize } from './useDragResize'
 
 const param = (k: string) => new URLSearchParams(window.location.search).get(k)
 
@@ -15,6 +16,7 @@ export function Shell() {
   const [showNotes, setShowNotes] = useState(false)
   const [present, setPresent] = useState(false)
   const [selectedFile, setSelectedFile] = useState<string | null>(null)
+  const [notesH, onNotesResize] = useDragResize(120, 'y', 48, 480) // px
   const qaDeck = useMemo(() => param('qa'), [])
 
   const show = useCallback((p: LoadedProject, src: FileSource) => {
@@ -101,34 +103,27 @@ export function Shell() {
       )}
       <main className="flex min-w-0 flex-1 flex-col">
         {!present && (
-          <>
           <div className="flex items-center gap-2 border-b border-line bg-panel px-4 py-2 text-xs">
-          <div className="flex items-center gap-2">
-            <span className="grid size-[25px] place-items-center rounded-md bg-accent font-extrabold text-white">P</span>
-            <b className="text-fg">{project?.title ?? 'PPTD Viewer'}</b>
+            {project && <b className="text-fg">{project.title}</b>}
+            {n > 0 && <span className="text-dim">slide {cur + 1} / {n}</span>}
+            {status && (
+              <span className={status.err ? 'text-rose-300' : 'animate-[fade-in_.2s] text-green-300'}>{status.msg}</span>
+            )}
+            <span className="flex-1" />
+            {project && (
+              <>
+                <button className="rounded-md border border-line bg-transparent px-[11px] py-1.5 text-xs font-medium text-fg hover:border-zinc-700 hover:bg-panel-raised" onClick={() => setShowNotes(s => !s)}>{showNotes ? 'Hide notes' : 'Notes'}</button>
+                <button className="rounded-md border border-accent bg-accent px-[11px] py-1.5 text-xs font-medium text-zinc-900 hover:bg-orange-400" onClick={() => setPresent(true)}>{present ? 'Exit present' : 'Present'}</button>
+              </>
+            )}
+            <span className="text-dim">←/→ navigate</span>
           </div>
-          {n > 0 && <span className="text-dim">slide {cur + 1} / {n}</span>}
-          {status && (
-            <span className={status.err ? 'text-rose-300' : 'animate-[fade-in_.2s] text-green-300'}>{status.msg}</span>
-          )}
-          <span className="flex-1" />
-          {project && (
-            <>
-              <button className="rounded-md border border-line bg-transparent px-[11px] py-1.5 text-xs font-medium text-fg hover:border-zinc-700 hover:bg-panel-raised" onClick={() => setShowNotes(s => !s)}>{showNotes ? 'Hide notes' : 'Notes'}</button>
-              <button className="rounded-md border border-accent bg-accent px-[11px] py-1.5 text-xs font-medium text-zinc-900 hover:bg-orange-400" onClick={() => setPresent(true)}>{present ? 'Exit present' : 'Present'}</button>
-            </>
-          )}
-          <span className="text-dim">←/→ navigate</span>
-          </div>
-
-          {notes && <div className="border-b border-line bg-panel-raised px-5 py-3 whitespace-pre-wrap text-dim">{notes}</div>}
-          </>
         )}
 
         <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-auto">
           {project ? (
             <div className="flex h-full min-w-0 w-full">
-              <Viewer project={project} index={cur} onSlideChange={setCur} present={present} onProjectChange={fn => setProject(p => (p ? fn(p) : p))} />
+              <Viewer project={project} index={cur} onSlideChange={setCur} present={present} onProjectChange={fn => setProject(p => (p ? fn(p) : p))} onComment={(componentRef, comment) => { void navigator.clipboard?.writeText(comment ? `${componentRef}: ${comment}` : componentRef); setStatus({ msg: 'Comments Copied', err: false }) }} />
               {refSrc && (
                 <figure className="flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center">
                   <img src={refSrc} alt={`soffice reference, slide ${cur + 1}`} className="min-h-0 max-h-full max-w-full flex-1 rounded-lg border border-line object-contain" />
@@ -149,6 +144,16 @@ export function Shell() {
             </div>
           )}
         </div>
+
+        {!present && notes && (
+          <>
+            <div className="group relative h-2 cursor-row-resize" onPointerDown={onNotesResize} role="separator" aria-orientation="horizontal">
+              <div className="absolute inset-x-0 top-0 h-px bg-line group-hover:bg-accent" />
+            </div>
+            <div className="border-t border-line bg-panel-raised overflow-auto px-5 py-3 whitespace-pre-wrap text-dim" style={{ height: notesH }}>{notes}</div>
+          </>
+        )}
+
       </main>
       {selectedFile && (
         <FilePreviewer source={source} selectedFile={selectedFile} onClose={() => setSelectedFile(null)} />

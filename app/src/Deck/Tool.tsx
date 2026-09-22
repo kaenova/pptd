@@ -4,12 +4,14 @@
  * Right of the grid toggle: adaptive quick props (fontSize/color/fill) for the selection.
  */
 import { useEffect, useRef, useState } from 'react'
-import { AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, Grid3x3, Image, Italic, List, Minus, MousePointer2, Droplet as OpacityIcon, Plus, Redo2, Slash, SlidersHorizontal, Sparkles, Square, Type, Undo2, icons, type LucideIcon } from 'lucide-react'
+import { AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, Grid3x3, Image, Italic, List, MessageSquarePlus, Minus, MousePointer2, Droplet as OpacityIcon, Play, Plus, Redo2, Slash, SlidersHorizontal, Smile, Square, Type, Undo2, icons, type LucideIcon } from 'lucide-react'
 import { useDeckCtx } from './context'
 import { multiSnapshotCmd } from './commands'
 import { PropertyPanel } from './PropertyPanel'
+import { ColorPicker, Dropdown } from './pickers'
 
 const FONT_STACKS = ['inherit', 'sans-serif', 'serif', 'monospace', 'cursive', 'fantasy'] as const
+const FONT_OPTIONS = FONT_STACKS.map(f => ({ value: f, label: f }))
 import type { Element, IconElement, ImageElement, LineElement, ShapeElement, TextElement } from '../types'
 
 const SHAPES = [
@@ -38,7 +40,7 @@ function IconGlyph({ name, className = 'size-4' }: { name: string; className?: s
 }
 
 export function DeckTool() {
-  const { present, tool, setTool, shapeName, setShapeName, iconName, setIconName, undo, redo, editor, grid, setGrid } = useDeckCtx()
+  const { present, tool, setTool, shapeName, setShapeName, iconName, setIconName, undo, redo, editor, grid, setGrid, replay, playing } = useDeckCtx()
   const [open, setOpen] = useState(false)
   const [iconOpen, setIconOpen] = useState(false)
   const [iconQuery, setIconQuery] = useState('')
@@ -63,6 +65,7 @@ export function DeckTool() {
       if (e.key === 'l') setTool('line')
       if (e.key === 'i') setTool('image')
       if (e.key === 'c') { setTool('icon'); setIconOpen(true) }
+      if (e.key === 'm') setTool('comment')
       if (e.key === 'g') setGrid(!grid)
     }
     addEventListener('keydown', onKey)
@@ -82,7 +85,7 @@ export function DeckTool() {
     `grid size-8 place-items-center rounded-lg transition-colors ${active ? 'bg-accent text-zinc-900' : 'text-fg hover:bg-panel-raised'}`
   const ic = 'size-4'
   return (
-    <div ref={barRef} className="absolute left-1/2 top-3 z-20 flex -translate-x-1/2 flex-col items-center gap-1">
+    <div ref={barRef} data-deck-tools className="absolute left-1/2 top-3 z-20 flex -translate-x-1/2 flex-col items-center gap-1">
       <div
         role="toolbar"
         aria-label="Deck tools"
@@ -104,7 +107,13 @@ export function DeckTool() {
           <Image className={ic} aria-hidden="true" />
         </button>
         <button className={btn(tool === 'icon')} title="Icon (C)" aria-pressed={tool === 'icon'} onClick={() => { setTool('icon'); setIconOpen(o => !o) }}>
-          <Sparkles className={ic} aria-hidden="true" />
+          <Smile className={ic} aria-hidden="true" />
+        </button>
+        <button className={btn(tool === 'comment')} title="Comment (M)" aria-pressed={tool === 'comment'} onClick={() => setTool('comment')}>
+          <MessageSquarePlus className={ic} aria-hidden="true" />
+        </button>
+        <button className={btn(false)} title="Play animation" aria-pressed={playing} onClick={() => { setTool('select'); replay() }}>
+          <Play className={ic} aria-hidden="true" />
         </button>
         <span className="mx-1 h-5 w-px bg-line" aria-hidden="true" />
         <button className={`${btn(false)} ${!editor.undoStack.length ? 'opacity-30' : ''}`} title="Undo (Ctrl+Z)" disabled={!editor.undoStack.length} onClick={undo}>
@@ -195,11 +204,8 @@ function QuickProps({ children }: { children?: React.ReactNode }) {
   // no selection: host only the properties toggle
   if (!el) return children ?? null
   const patch = (fn: (e: Element) => Element, label: string) => runCommand(multiSnapshotCmd(index, [el], [fn(el)], label))
-  const swatch = 'size-7 cursor-pointer rounded border border-line bg-transparent p-0'
   const num = 'h-7 w-14 rounded-md border border-line bg-panel px-1 text-xs text-fg outline-none focus:border-accent'
-  const sel0 = 'h-7 rounded-md border border-line bg-panel px-1 text-xs text-fg outline-none focus:border-accent'
   const tbtn = (active: boolean) => `grid size-7 place-items-center rounded-md border text-xs ${active ? 'border-accent bg-accent text-zinc-900' : 'border-transparent text-fg hover:bg-panel-raised'}`
-  const hex = (c: string | undefined, d: string) => (/^#[0-9a-fA-F]{6}$/.test(c ?? '') ? c! : d)
   const Sep = () => <span className="mx-1 h-5 w-px bg-line" aria-hidden="true" />
 
   if (el.elementType === 'text') {
@@ -210,11 +216,8 @@ function QuickProps({ children }: { children?: React.ReactNode }) {
     const step = (d: number) => set({ fontSize: Math.max(4, Math.round((c.fontSize ?? 24) + d)) }, 'fontSize')
     return (
       <div role="group" aria-label="Quick properties" className="ml-2 flex items-center gap-1 border-l border-line pl-2">
-        <select className={sel0} aria-label="font" value={typeof c.fontFamily === 'string' ? c.fontFamily : 'inherit'}
-          onChange={e => set({ fontFamily: e.target.value === 'inherit' ? undefined : e.target.value }, 'font')}
-          title="font">
-          {FONT_STACKS.map(f => <option key={f} value={f}>{f}</option>)}
-        </select>
+        <Dropdown title="font" value={typeof c.fontFamily === 'string' ? c.fontFamily : 'inherit'} options={FONT_OPTIONS}
+          onChange={v => set({ fontFamily: v === 'inherit' ? undefined : v }, 'font')} />
         <span className="flex items-center">
           <button className={tbtn(false)} title="decrease fontSize" onClick={() => step(-2)}><Minus className="size-3.5" aria-hidden="true" /></button>
           <input type="number" className={`${num} w-12 border-x-0 rounded-none`} aria-label="fontSize" value={c.fontSize ?? 24} min={4}
@@ -224,10 +227,8 @@ function QuickProps({ children }: { children?: React.ReactNode }) {
         <button className={tbtn(!!c.bold)} title="Bold (Ctrl+B)" aria-pressed={!!c.bold} onClick={() => set({ bold: !c.bold }, 'bold')}><Bold className="size-3.5" aria-hidden="true" /></button>
         <button className={tbtn(!!c.italic)} title="Italic (Ctrl+I)" aria-pressed={!!c.italic} onClick={() => set({ italic: !c.italic }, 'italic')}><Italic className="size-3.5" aria-hidden="true" /></button>
         <Sep />
-        <input type="color" className={swatch} title="text color" aria-label="text color" value={hex(c.color, '#000000')}
-          onChange={e => set({ color: e.target.value }, 'color')} />
-        <input type="color" className={swatch} title="highlight" aria-label="highlight" value={hex(c.backgroundColor, '#ffe600')}
-          onChange={e => set({ backgroundColor: e.target.value }, 'highlight')} />
+        <ColorPicker title="text color" value={c.color} onChange={v => set({ color: v }, 'color')} />
+        <ColorPicker title="highlight" value={c.backgroundColor} onChange={v => set({ backgroundColor: v }, 'highlight')} />
         <Sep />
         {([['left', AlignLeft], ['center', AlignCenter], ['right', AlignRight], ['justify', AlignJustify]] as const).map(([a, I]) => (
           <button key={a} className={tbtn((c.align?.[0] ?? 'left') === a)} title={`align ${a}`}
@@ -248,11 +249,9 @@ function QuickProps({ children }: { children?: React.ReactNode }) {
     const hasBorder = el.elementType === 'shape' && !!b
     return (
       <div role="group" aria-label="Quick properties" className="ml-2 flex items-center gap-1 border-l border-line pl-2">
-        <input type="color" className={swatch} title="fill" aria-label="fill color" value={hex(solid, el.elementType === 'icon' ? '#333333' : '#FF6900')}
-          onChange={e => patch(x => ({ ...(x as ShapeElement), fill: { type: 'solid', color: e.target.value } }), 'fill')} />
+        <ColorPicker title="fill" value={solid} onChange={v => patch(x => ({ ...(x as ShapeElement), fill: { type: 'solid', color: v } }), 'fill')} />
         {hasBorder && (
-          <input type="color" className={swatch} title="border color" aria-label="border color" value={hex(b!.color, '#000000')}
-            onChange={e => patch(x => ({ ...(x as ShapeElement), border: { style: 'solid', width: 1, ...(x as ShapeElement).border, color: e.target.value } }), 'border color')} />
+          <ColorPicker title="border color" value={b!.color} onChange={v => patch(x => ({ ...(x as ShapeElement), border: { style: 'solid', width: 1, ...(x as ShapeElement).border, color: v } }), 'border color')} />
         )}
         <button className={tbtn(hasBorder)} title="border on/off" onClick={() => patch(x => ({ ...(x as ShapeElement), border: hasBorder ? undefined : { style: 'solid', width: 1, color: '#000000' } }), 'border')}>
           <Square className="size-3.5" aria-hidden="true" />
@@ -271,8 +270,7 @@ function QuickProps({ children }: { children?: React.ReactNode }) {
     const l = el as LineElement
     return (
       <div role="group" aria-label="Quick properties" className="ml-2 flex items-center gap-1 border-l border-line pl-2">
-        <input type="color" className={swatch} title="stroke" aria-label="stroke color" value={hex(l.border?.color, '#000000')}
-          onChange={e => patch(x => ({ ...(x as LineElement), border: { style: 'solid', width: 1, ...(x as LineElement).border, color: e.target.value } }), 'stroke')} />
+        <ColorPicker title="stroke" value={l.border?.color} onChange={v => patch(x => ({ ...(x as LineElement), border: { style: 'solid', width: 1, ...(x as LineElement).border, color: v } }), 'stroke')} />
         <input type="number" className={`${num} w-12`} aria-label="stroke width" value={l.border?.width ?? 1} min={0.5} step={0.5}
           onChange={e => { const n = parseFloat(e.target.value); if (!Number.isNaN(n)) patch(x => ({ ...(x as LineElement), border: { style: 'solid', color: '#000000', ...(x as LineElement).border, width: n } }), 'stroke width') }} />
         {children}

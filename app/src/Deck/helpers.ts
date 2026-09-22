@@ -39,10 +39,11 @@ export function newShapeElement(shapeName: string, bounds: [number, number, numb
   return { elementId: uid('shape'), elementType: 'shape', shapeName, bounds, fill: { type: 'solid', color: '$primary' } }
 }
 
-/** New line element: normalized diagonal path in a viewBox equal to the drag rect. */
-export function newLineElement(bounds: [number, number, number, number]): import('../types').LineElement {
-  const [, , w, h] = bounds
-  return { elementId: uid('line'), elementType: 'line', bounds, viewBox: [w, h], points: `0,0 ${r2(w)},${r2(h)}`, border: { color: '#333333', width: 2 } }
+/** New line element from drag endpoints (any direction): bounds = normalized rect, endpoints mapped into it. */
+export function newLineElement(x0: number, y0: number, x1: number, y1: number): import('../types').LineElement {
+  const b = rectBounds(x0, y0, x1, y1)
+  const w = Math.max(1, b[2]), h = Math.max(1, b[3]) // nonzero viewBox — degenerate w/h=0 breaks the svg
+  return { elementId: uid('line'), elementType: 'line', bounds: [b[0], b[1], w, h], viewBox: [w, h], points: `${r2(x0 - b[0])},${r2(y0 - b[1])} ${r2(x1 - b[0])},${r2(y1 - b[1])}`, border: { color: '#333333', width: 2 } }
 }
 
 /** New image element (blob/object URL) with cover fit. */

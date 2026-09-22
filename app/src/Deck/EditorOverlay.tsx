@@ -5,9 +5,11 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Element, TextElement } from '../types'
+import { ArrowRight } from 'lucide-react'
 import { useDeckCtx } from './context'
 import { addElementCmd, crossPageMoveCmd, moveCmd, multiSnapshotCmd } from './commands'
 import { localDelta, resizeBounds, snapAngle, normAngle, resizedElement, rectBounds, newTextElement, newShapeElement, newLineElement, newImageElement, newIconElement, MIN_SIZE, snapDelta, type Guide, type Bounds, type Handle } from './helpers'
+import { linePath } from '../render/elements/Line'
 
 const MIN_DRAG = 2 // px (screen) before a pointer press counts as a drag
 const HANDLES: Handle[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']
@@ -28,9 +30,12 @@ type Gesture =
 interface MarqueeState { x0: number; y0: number; x1: number; y1: number }
 
 export function EditorOverlay() {
-  const { project, index, scale, editor, dispatch, runCommand, tool, shapeName, iconName, setTool } = useDeckCtx()
+  const { project, index, scale, editor, dispatch, runCommand, tool, shapeName, iconName, setTool, onComment } = useDeckCtx()
   const page = project.pages[index]
   const [hoveredId, setHoveredId] = useState<string | null>(null)
+  // comment tool: element awaiting a comment (Figma-style popover)
+  const [commentEl, setCommentEl] = useState<Element | null>(null)
+  const [commentText, setCommentText] = useState('')
   // clear hover when the pointer leaves the app window (deck) entirely
   useEffect(() => {
     const clear = () => setHoveredId(null)
@@ -201,8 +206,8 @@ export function EditorOverlay() {
       let el: Element | undefined
       if (tool === 'icon') {
         el = newIconElement(iconName, b[2] < MIN_DRAG || b[3] < MIN_DRAG ? [Math.round(x0) - 32, Math.round(y0) - 32, 64, 64] : b)
-      } else if (b[2] >= MIN_DRAG && b[3] >= MIN_DRAG) {
-        el = tool === 'shape' ? newShapeElement(shapeName, b) : newLineElement(b)
+      } else if (b[2] >= MIN_DRAG || b[3] >= MIN_DRAG) { // line: horizontal/vertical drag counts too; shape needs both axes
+        el = tool === 'shape' ? newShapeElement(shapeName, b) : newLineElement(x0, y0, x1, y1)
       }
       if (!el) return // too tiny — treat as nothing
       runCommand(addElementCmd(index, el))
@@ -219,11 +224,29 @@ export function EditorOverlay() {
     fileRef.current?.click()
   }
 
+  // comment tool: submit/cancel the popover
+  const closeComment = useCallback(() => { setCommentEl(null); setCommentText('') }, [])
+  const submitComment = () => {
+    if (!commentEl) return
+    onComment?.(`*.page>${commentEl.elementId}`, commentText.trim() || undefined)
+    closeComment()
+    setTool('select')
+  }
+  // leaving the comment tool closes any open popover
+  useEffect(() => { if (tool !== 'comment') closeComment() }, [tool, closeComment])
+
   // --- move / marquee -----------------------------------------------------------
   const onPointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0) return
     if (tool === 'shape' || tool === 'line' || tool === 'icon') return startCreate(e)
     if (tool === 'image') return startImagePick(e)
+    // comment tool: click a component → open comment popover (Figma-style)
+    if (tool === 'comment') {
+      const el = hit(e)
+      setCommentEl(el ?? null)
+      setCommentText('')
+      return
+    }
     const el = hit(e)
     if (el) {
       const additive = e.shiftKey
@@ -433,11 +456,50 @@ export function EditorOverlay() {
       )}
       {/* creation live preview (shape/line drag) */}
       {create && (
-        <div
-          className="pointer-events-none absolute border-2 border-accent bg-[#ff69001a]"
-          style={{ left: Math.min(create.x0, create.x1), top: Math.min(create.y0, create.y1), width: Math.abs(create.x1 - create.x0), height: Math.abs(create.y1 - create.y0) }}
+        <svg
+          className="pointer-events-none absolute overflow-visible"
+          style={{
+            left: Math.min(create.x0, create.x1), top: Math.min(create.y0, create.y1),
+            width: Math.max(1, Math.abs(create.x1 - create.x0)), height: Math.max(1, Math.abs(create.y1 - create.y0)),
+          }}
+          viewBox={`0 0 ${Math.max(1, Math.abs(create.x1 - create.x0))} ${Math.max(1, Math.abs(create.y1 - create.y0))}`}
+          preserveAspectRatio="none"
           aria-hidden="true"
-        />
+        >
+          {tool === 'line' ? (() => {
+            const w = Math.abs(create.x1 - create.x0), h = Math.abs(create.y1 - create.y0)
+            const sx = create.x1 < create.x0 ? w : 0, sy = create.y1 < create.y0 ? h : 0
+            return <path d={linePath(`${sx},${sy} ${w - sx},${h - sy}`, undefined)} stroke="#f97316" strokeWidth={2} fill="none" vectorEffect="non-scaling-stroke" />
+          })() : (
+            <rect x={0.5} y={0.5} width={Math.max(1, Math.abs(create.x1 - create.x0)) - 1} height={Math.max(1, Math.abs(create.y1 - create.y0)) - 1} fill="#f973161f" stroke="#f97316" strokeWidth={2} vectorEffect="non-scaling-stroke" />
+          )}
+        </svg>
+      )}
+      {/* comment popover (comment tool): minimal, anchored below the element */}
+      {commentEl && (
+        <div
+          className="absolute z-20 w-44 rounded-md border border-line bg-panel p-1.5 text-xs shadow-lg"
+          style={{ left: commentEl.bounds[0], top: commentEl.bounds[1] + commentEl.bounds[3] + 6 }}
+          aria-label="Add comment"
+          onPointerDown={e => e.stopPropagation()}
+        >
+          <div className="flex items-start gap-1">
+            <textarea
+              autoFocus
+              className="h-8 min-w-0 flex-1 resize-none bg-transparent py-0.5 text-[11px] text-fg outline-none placeholder:text-muted"
+              placeholder="Comment…"
+              value={commentText}
+              onChange={e => setCommentText(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment() }
+                if (e.key === 'Escape') { e.preventDefault(); closeComment() }
+              }}
+            />
+            <button className="grid size-6 shrink-0 place-items-center rounded-md text-accent hover:bg-panel-raised" title="Post comment" onClick={submitComment}>
+              <ArrowRight className="size-3.5" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
       )}
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={e => {
         const f = e.target.files?.[0]
