@@ -1,6 +1,6 @@
 /**
- * PropertyPanel — floating advanced property editor (right side) for the selected
- * element / page props. Renders nothing in present mode or with no selection
+ * PropertyPanel — advanced property editor body, hosted in the DeckTool
+ * properties dropdown. Renders nothing in present mode or with no selection
  * (page props via toggle). Each change commits an undoable snapshot command.
  */
 import { useState } from 'react'
@@ -121,7 +121,7 @@ export function PropertyPanel() {
   const LAYER_ICONS = { back: ArrowDownToLine, backward: ArrowDown, forward: ArrowUp, front: ArrowUpToLine } as const
 
   return (
-    <div className="absolute right-3 top-3 z-20 max-h-[calc(100%-24px)] w-60 overflow-auto rounded-xl border border-line bg-panel p-3 text-xs shadow-lg" aria-label="Properties">
+    <>
       <div className="mb-2 flex items-center justify-between">
         <b className="text-fg">{el ? `${el.elementType} · ${el.elementId.slice(0, 14)}` : 'Page'}</b>
         <button className="rounded-md border border-line px-1.5 py-0.5 text-[10px] text-dim hover:bg-panel-raised"
@@ -161,7 +161,7 @@ export function PropertyPanel() {
       )}
 
       {(!el || pageMode) && <PagePanel page={page} run={label => runCommand(label)} project={project} index={index} />}
-    </div>
+    </>
   )
 }
 
