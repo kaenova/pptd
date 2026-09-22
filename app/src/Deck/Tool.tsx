@@ -44,14 +44,6 @@ export function DeckTool() {
   const [iconQuery, setIconQuery] = useState('')
   const [propsOpen, setPropsOpen] = useState(false)
   const barRef = useRef<HTMLDivElement>(null)
-  const hadSelection = useRef(false)
-
-  // auto-open the properties dropdown when a component gets selected
-  useEffect(() => {
-    const has = editor.selection.length > 0
-    if (has && !hadSelection.current) setPropsOpen(true)
-    hadSelection.current = has
-  }, [editor.selection])
 
   // shortcuts: V select, T text, R shape, L line, I image; Ctrl/Cmd+Z undo, +Shift redo
   useEffect(() => {

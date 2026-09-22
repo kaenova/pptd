@@ -31,6 +31,16 @@ export function EditorOverlay() {
   const { project, index, scale, editor, dispatch, runCommand, tool, shapeName, iconName, setTool } = useDeckCtx()
   const page = project.pages[index]
   const [hoveredId, setHoveredId] = useState<string | null>(null)
+  // clear hover when the pointer leaves the app window (deck) entirely
+  useEffect(() => {
+    const clear = () => setHoveredId(null)
+    window.addEventListener('blur', clear)
+    document.documentElement.addEventListener('mouseleave', clear)
+    return () => {
+      window.removeEventListener('blur', clear)
+      document.documentElement.removeEventListener('mouseleave', clear)
+    }
+  }, [])
   const [gesture, setGesture] = useState<Gesture | null>(null)
   const [marquee, setMarquee] = useState<MarqueeState | null>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
