@@ -7,8 +7,8 @@ import type { ComponentSelection } from '../select'
 import type { Command } from './commands'
 import type { EditorAction, EditorState } from './editorState'
 
-/** Active edit tool (Figma-style). */
-export type Tool = 'select' | 'text'
+/** Active edit tool (Figma-style). shape/line/image create by dragging on canvas. */
+export type Tool = 'select' | 'text' | 'shape' | 'line' | 'image' | 'icon'
 
 interface DeckCtx {
   project: LoadedProject
@@ -19,10 +19,13 @@ interface DeckCtx {
   playToken: number
   thumbW: number
   tool: Tool
+  /** shape name for the shape tool (set by the shape picker) */
+  shapeName: string
   editor: EditorState
   setScale: (s: number) => void
   setThumbW: (w: number) => void
   setTool: (t: Tool) => void
+  setShapeName: (s: string) => void
   dispatch: (a: EditorAction) => void
   /** Apply a command to the project and push it onto history. No-op in read-only decks. */
   runCommand: (cmd: Command) => void

@@ -106,3 +106,29 @@ describe('resizedElement', () => {
     assert.deepEqual(out.bounds, [1, 2, 3, 4])
   })
 })
+
+import { rectBounds, newShapeElement, newLineElement, newImageElement, newIconElement } from '../src/Deck/helpers'
+
+describe('creation factories', () => {
+  it('rectBounds normalizes any drag direction', () => {
+    assert.deepEqual(rectBounds(100, 50, 20, 10), [20, 10, 80, 40])
+    assert.deepEqual(rectBounds(20, 10, 100, 50), [20, 10, 80, 40])
+  })
+  it('newShapeElement: primary fill, unique ids', () => {
+    const s = newShapeElement('ellipse', [0, 0, 50, 50])
+    assert.equal(s.shapeName, 'ellipse')
+    assert.deepEqual(s.fill, { type: 'solid', color: '$primary' })
+    assert.notEqual(s.elementId, newShapeElement('rect', [0, 0, 1, 1]).elementId)
+  })
+  it('newLineElement: viewBox = bounds size, diagonal path', () => {
+    const l = newLineElement([10, 20, 100, 50])
+    assert.deepEqual(l.viewBox, [100, 50])
+    assert.equal(l.points, '0,0 100,50')
+  })
+  it('newImageElement/newIconElement defaults', () => {
+    assert.deepEqual(newImageElement('blob:x', [0, 0, 10, 10]).fit, { mode: 'cover' })
+    const i = newIconElement('fas:house', 100, 100)
+    assert.equal(i.iconName, 'fas:house')
+    assert.deepEqual(i.bounds, [68, 68, 64, 64])
+  })
+})

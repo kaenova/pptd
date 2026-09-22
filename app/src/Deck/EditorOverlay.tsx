@@ -3,11 +3,11 @@
  * hover box, selection box + resize handles + rotation handle, click-select,
  * drag-move, marquee, double-click-to-edit. Renderers stay dumb.
  */
-import { useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Element, TextElement } from '../types'
 import { useDeckCtx } from './context'
-import { moveCmd, multiSnapshotCmd } from './commands'
-import { localDelta, resizeBounds, snapAngle, normAngle, resizedElement, type Bounds, type Handle } from './helpers'
+import { addElementCmd, moveCmd, multiSnapshotCmd } from './commands'
+import { localDelta, resizeBounds, snapAngle, normAngle, resizedElement, rectBounds, newTextElement, newShapeElement, newLineElement, newImageElement, newIconElement, type Bounds, type Handle } from './helpers'
 
 const MIN_DRAG = 2 // px (screen) before a pointer press counts as a drag
 const HANDLES: Handle[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']
@@ -28,7 +28,7 @@ type Gesture =
 interface MarqueeState { x0: number; y0: number; x1: number; y1: number }
 
 export function EditorOverlay() {
-  const { project, index, scale, editor, dispatch, runCommand, tool } = useDeckCtx()
+  const { project, index, scale, editor, dispatch, runCommand, tool, shapeName } = useDeckCtx()
   const page = project.pages[index]
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [gesture, setGesture] = useState<Gesture | null>(null)
@@ -106,9 +106,83 @@ export function EditorOverlay() {
     addEventListener('pointerup', onUp)
   }
 
+  // --- creation (E3) --------------------------------------------------------
+
+  const [create, setCreate] = useState<MarqueeState | null>(null)
+  const [iconPick, setIconPick] = useState<{ x: number; y: number } | null>(null)
+  const [iconQuery, setIconQuery] = useState('')
+  const fileRef = useRef<HTMLInputElement>(null)
+  const imageAt = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
+
+  const placeImage = useCallback((file: File, x: number, y: number) => {
+    if (!file.type.startsWith('image/')) return
+    const src = URL.createObjectURL(file)
+    const el = newImageElement(src, [Math.round(x - 150), Math.round(y - 100), 300, 200])
+    runCommand(addElementCmd(index, el))
+    dispatch({ type: 'select', ids: [el.elementId] })
+  }, [index, runCommand, dispatch])
+
+  const pickIcon = (name: string) => {
+    const el = newIconElement(`fas:${name}`, iconPick!.x, iconPick!.y)
+    runCommand(addElementCmd(index, el))
+    dispatch({ type: 'select', ids: [el.elementId] })
+    setIconPick(null)
+  }
+
+  // paste image → new element at canvas center
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      const file = [...(e.clipboardData?.files ?? [])].find(f => f.type.startsWith('image/'))
+      if (!file) return
+      e.preventDefault()
+      placeImage(file, project.size[0] / 2, project.size[1] / 2)
+    }
+    addEventListener('paste', onPaste)
+    return () => removeEventListener('paste', onPaste)
+  }, [placeImage, project.size])
+
+  // shape/line: drag to draw (live preview via `create` state)
+  const startCreate = (e: React.PointerEvent) => {
+    const r = wrapRef.current!.getBoundingClientRect()
+    const x0 = (e.clientX - r.left) / scale
+    const y0 = (e.clientY - r.top) / scale
+    let x1 = x0, y1 = y0
+    const onMove = (ev: PointerEvent) => {
+      x1 = (ev.clientX - r.left) / scale
+      y1 = (ev.clientY - r.top) / scale
+      setCreate({ x0, y0, x1, y1 })
+    }
+    const onUp = () => {
+      removeEventListener('pointermove', onMove)
+      removeEventListener('pointerup', onUp)
+      setCreate(null)
+      const b = rectBounds(x0, y0, x1, y1)
+      if (b[2] < MIN_DRAG || b[3] < MIN_DRAG) return // too tiny — treat as nothing
+      const el = tool === 'shape' ? newShapeElement(shapeName, b) : newLineElement(b)
+      runCommand(addElementCmd(index, el))
+      dispatch({ type: 'select', ids: [el.elementId] })
+    }
+    addEventListener('pointermove', onMove)
+    addEventListener('pointerup', onUp)
+  }
+
+  const startImagePick = (e: React.PointerEvent) => {
+    const r = wrapRef.current!.getBoundingClientRect()
+    imageAt.current = { x: (e.clientX - r.left) / scale, y: (e.clientY - r.top) / scale }
+    fileRef.current?.click()
+  }
+
   // --- move / marquee -----------------------------------------------------------
   const onPointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0) return
+    if (tool === 'shape' || tool === 'line') return startCreate(e)
+    if (tool === 'image') return startImagePick(e)
+    if (tool === 'icon') {
+      const r = wrapRef.current!.getBoundingClientRect()
+      setIconQuery('')
+      setIconPick({ x: (e.clientX - r.left) / scale, y: (e.clientY - r.top) / scale })
+      return
+    }
     const el = hit(e)
     if (el) {
       const additive = e.shiftKey
@@ -174,6 +248,13 @@ export function EditorOverlay() {
     if (el) {
       dispatch({ type: 'select', ids: [el.elementId] })
       if (el.elementType === 'text') dispatch({ type: 'startEdit', id: el.elementId })
+    } else if (tool === 'select') {
+      // double-click empty canvas → new text at point, in edit mode (Figma)
+      const r = wrapRef.current!.getBoundingClientRect()
+      const t = newTextElement((e.clientX - r.left) / scale, (e.clientY - r.top) / scale)
+      runCommand(addElementCmd(index, t))
+      dispatch({ type: 'select', ids: [t.elementId] })
+      dispatch({ type: 'startEdit', id: t.elementId })
     }
   }
 
@@ -188,9 +269,17 @@ export function EditorOverlay() {
       ref={wrapRef}
       className="absolute inset-0 z-10"
       data-overlay="bg"
-      style={{ cursor: busy ? 'grabbing' : tool === 'text' ? 'text' : hovered ? 'pointer' : 'default' }}
+      style={{ cursor: busy ? 'grabbing' : tool === 'text' ? 'text' : tool !== 'select' ? 'crosshair' : hovered ? 'pointer' : 'default' }}
       onPointerDown={onPointerDown}
       onDoubleClick={onDoubleClick}
+      onDragOver={e => e.preventDefault()}
+      onDrop={e => {
+        e.preventDefault()
+        const file = [...e.dataTransfer.files].find(f => f.type.startsWith('image/'))
+        if (!file) return
+        const r = wrapRef.current!.getBoundingClientRect()
+        placeImage(file, (e.clientX - r.left) / scale, (e.clientY - r.top) / scale)
+      }}
       onMouseMove={e => { const el = hit(e); setHoveredId(el?.elementId ?? null) }}
       onMouseLeave={() => setHoveredId(null)}
     >
@@ -248,6 +337,57 @@ export function EditorOverlay() {
           aria-hidden="true"
         />
       )}
+      {/* creation live preview (shape/line drag) */}
+      {create && (
+        <div
+          className="pointer-events-none absolute border-2 border-accent bg-[#ff69001a]"
+          style={{ left: Math.min(create.x0, create.x1), top: Math.min(create.y0, create.y1), width: Math.abs(create.x1 - create.x0), height: Math.abs(create.y1 - create.y0) }}
+          aria-hidden="true"
+        />
+      )}
+      {/* icon search popover */}
+      {iconPick && (
+        <div
+          role="dialog"
+          aria-label="Pick an icon"
+          className="absolute z-30 w-64 rounded-xl border border-line bg-panel p-2 shadow-lg"
+          style={{ left: Math.min(iconPick.x, project.size[0] - 270), top: Math.min(iconPick.y, project.size[1] - 220) }}
+        >
+          <input
+            autoFocus
+            type="search"
+            placeholder="Search icons…"
+            className="mb-2 w-full rounded-md border border-line bg-transparent px-2 py-1 text-xs text-fg outline-none"
+            value={iconQuery}
+            onChange={e => setIconQuery(e.target.value)}
+            onKeyDown={e => {
+              e.stopPropagation()
+              if (e.key === 'Escape') setIconPick(null)
+              if (e.key === 'Enter') {
+                const first = ICONS.filter(n => n.includes(iconQuery.trim().toLowerCase()))[0]
+                if (first) pickIcon(first)
+              }
+            }}
+          />
+          <div className="grid max-h-40 grid-cols-6 gap-1 overflow-auto">
+            {ICONS.filter(n => n.includes(iconQuery.trim().toLowerCase())).slice(0, 48).map(n => (
+              <button
+                key={n}
+                title={n}
+                className="grid size-8 place-items-center rounded-md text-fg hover:bg-accent hover:text-zinc-900"
+                onClick={() => pickIcon(n)}
+              >
+                <i className={`fa-solid fa-${n}`} />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      <input ref={fileRef} type="file" accept="image/*" hidden onChange={e => {
+        const f = e.target.files?.[0]
+        if (f) placeImage(f, imageAt.current.x, imageAt.current.y)
+        e.target.value = ''
+      }} />
     </div>
   )
 }
@@ -258,3 +398,17 @@ export function editingTextEl(page: { elements: Element[] }, editingId: string |
   const el = page.elements.find(e => e.elementId === editingId)
   return el && el.elementType === 'text' ? (el as TextElement) : undefined
 }
+
+// Common FA7 free-solid icon names for the icon tool picker.
+// ponytail: static ~60-name list; swap to live FA metadata search if users need more.
+const ICONS = [
+  'house', 'user', 'users', 'gear', 'star', 'heart', 'magnifying-glass', 'envelope',
+  'phone', 'cart-shopping', 'truck', 'globe', 'calendar', 'clock', 'location-dot', 'bookmark',
+  'flag', 'tag', 'bell', 'comment', 'paper-plane', 'link', 'lock', 'key',
+  'shield-halved', 'circle-check', 'circle-xmark', 'circle-info', 'triangle-exclamation', 'plus', 'minus',
+  'check', 'xmark', 'arrow-right', 'arrow-left', 'arrow-up', 'arrow-down',
+  'chart-line', 'chart-column', 'chart-pie', 'file', 'folder', 'image', 'video',
+  'camera', 'music', 'play', 'code', 'robot', 'lightbulb', 'fire', 'trophy',
+  'medal', 'gift', 'sun', 'moon', 'cloud', 'bolt', 'leaf', 'car', 'plane',
+  'rocket', 'wrench', 'briefcase', 'building', 'school', 'book', 'pen', 'pencil', 'trash', 'thumbs-up',
+]

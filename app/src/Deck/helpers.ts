@@ -27,6 +27,36 @@ export function newTextElement(x: number, y: number): import('../types').TextEle
   }
 }
 
+const uid = (p: string) => `${p}-${crypto.randomUUID().slice(0, 8)}`
+
+/** Normalize a drag rect (any corner direction) to [x, y, w, h]. */
+export function rectBounds(x0: number, y0: number, x1: number, y1: number): [number, number, number, number] {
+  return [Math.round(Math.min(x0, x1)), Math.round(Math.min(y0, y1)), Math.round(Math.abs(x1 - x0)), Math.round(Math.abs(y1 - y0))]
+}
+
+/** New shape element (default theme-primary fill, no border). */
+export function newShapeElement(shapeName: string, bounds: [number, number, number, number]): import('../types').ShapeElement {
+  return { elementId: uid('shape'), elementType: 'shape', shapeName, bounds, fill: { type: 'solid', color: '$primary' } }
+}
+
+/** New line element: normalized diagonal path in a viewBox equal to the drag rect. */
+export function newLineElement(bounds: [number, number, number, number]): import('../types').LineElement {
+  const [, , w, h] = bounds
+  return { elementId: uid('line'), elementType: 'line', bounds, viewBox: [w, h], points: `0,0 ${r2(w)},${r2(h)}`, border: { color: '#333333', width: 2 } }
+}
+
+/** New image element (blob/object URL) with cover fit. */
+export function newImageElement(src: string, bounds: [number, number, number, number]): import('../types').ImageElement {
+  return { elementId: uid('image'), elementType: 'image', src, bounds, fit: { mode: 'cover' } }
+}
+
+/** New icon element centered on (x, y). */
+export function newIconElement(iconName: string, x: number, y: number): import('../types').IconElement {
+  return { elementId: uid('icon'), elementType: 'icon', iconName, bounds: [Math.round(x - 32), Math.round(y - 32), 64, 64], fill: { type: 'solid', color: '#333333' } }
+}
+
+const r2 = (n: number) => Math.round(n * 100) / 100
+
 /** Bounds moved by (dx, dy) canvas px. */
 export function moveBounds(b: [number, number, number, number], dx: number, dy: number): [number, number, number, number] {
   return [b[0] + dx, b[1] + dy, b[2], b[3]]

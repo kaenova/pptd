@@ -21,7 +21,8 @@ export function DeckRoot({ project, index, present = false, onSelect, onSlideCha
   const [thumbW, setThumbW] = useState(112)
   const [playing, setPlaying] = useState(false)
   const [playToken, setPlayToken] = useState(0)
-  const [tool, setTool] = useState<'select' | 'text'>('select')
+  const [tool, setTool] = useState<'select' | 'text' | 'shape' | 'line' | 'image' | 'icon'>('select')
+  const [shapeName, setShapeName] = useState('rect')
   const [editor, dispatch] = useReducer(editorReducer, initialEditorState)
 
   // slide change / present toggle → back to static final; next stage click replays
@@ -49,10 +50,11 @@ export function DeckRoot({ project, index, present = false, onSelect, onSlideCha
   }, [editor.redoStack, onProjectChange])
 
   const ctx = useMemo(() => ({
-    project, index, present, scale, playing, playToken, thumbW, tool, editor,
+    project, index, present, scale, playing, playToken, thumbW, tool, shapeName, editor,
     setScale,
     setThumbW,
     setTool,
+    setShapeName,
     dispatch,
     runCommand,
     undo,
@@ -61,7 +63,7 @@ export function DeckRoot({ project, index, present = false, onSelect, onSlideCha
     replay,
     selectSlide: (i: number) => onSlideChange?.(i),
     onSelect,
-  }), [project, index, present, scale, playing, playToken, thumbW, tool, editor, runCommand, undo, redo, replay, onSlideChange, onProjectChange, onSelect])
+  }), [project, index, present, scale, playing, playToken, thumbW, tool, shapeName, editor, runCommand, undo, redo, replay, onSlideChange, onProjectChange, onSelect])
 
   return <Ctx.Provider value={ctx}>{children}</Ctx.Provider>
 }
