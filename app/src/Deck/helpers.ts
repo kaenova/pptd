@@ -17,12 +17,12 @@ export function thumbScale(thumbWidth: number, pageW: number): number {
   return thumbWidth > 0 ? (thumbWidth - 12) / pageW : 0
 }
 
-/** New default text element centered on (x, y) canvas coordinates. */
+/** New default text element anchored at (x, y) top-left (Figma-style). */
 export function newTextElement(x: number, y: number): import('../types').TextElement {
   return {
     elementId: `text-${crypto.randomUUID().slice(0, 8)}`,
     elementType: 'text',
-    bounds: [Math.round(x - 100), Math.round(y - 16), 200, 32],
+    bounds: [Math.round(x), Math.round(y), 200, 32],
     content: { text: 'Text', fontSize: 24 },
   }
 }
@@ -50,9 +50,9 @@ export function newImageElement(src: string, bounds: [number, number, number, nu
   return { elementId: uid('image'), elementType: 'image', src, bounds, fit: { mode: 'cover' } }
 }
 
-/** New icon element centered on (x, y). */
-export function newIconElement(iconName: string, x: number, y: number): import('../types').IconElement {
-  return { elementId: uid('icon'), elementType: 'icon', iconName, bounds: [Math.round(x - 32), Math.round(y - 32), 64, 64], fill: { type: 'solid', color: '#333333' } }
+/** New icon element filling `bounds` (lucide kebab name). */
+export function newIconElement(iconName: string, bounds: [number, number, number, number]): import('../types').IconElement {
+  return { elementId: uid('icon'), elementType: 'icon', iconName, bounds, fill: { type: 'solid', color: '#333333' } }
 }
 
 const r2 = (n: number) => Math.round(n * 100) / 100

@@ -21,6 +21,8 @@ interface DeckCtx {
   tool: Tool
   /** shape name for the shape tool (set by the shape picker) */
   shapeName: string
+  /** lucide icon name for the icon tool (set by the icon picker) */
+  iconName: string
   editor: EditorState
   /** 10px grid overlay toggle (G) */
   grid: boolean
@@ -29,6 +31,7 @@ interface DeckCtx {
   setThumbW: (w: number) => void
   setTool: (t: Tool) => void
   setShapeName: (s: string) => void
+  setIconName: (s: string) => void
   dispatch: (a: EditorAction) => void
   /** Apply a command to the project and push it onto history. No-op in read-only decks. */
   runCommand: (cmd: Command) => void

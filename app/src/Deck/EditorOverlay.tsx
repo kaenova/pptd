@@ -4,19 +4,12 @@
  * drag-move, marquee, double-click-to-edit. Renderers stay dumb.
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { icons, type LucideIcon } from 'lucide-react'
 import type { Element, TextElement } from '../types'
 import { useDeckCtx } from './context'
-import { addElementCmd, moveCmd, multiSnapshotCmd } from './commands'
+import { addElementCmd, crossPageMoveCmd, moveCmd, multiSnapshotCmd } from './commands'
 import { localDelta, resizeBounds, snapAngle, normAngle, resizedElement, rectBounds, newTextElement, newShapeElement, newLineElement, newImageElement, newIconElement, MIN_SIZE, snapDelta, type Guide, type Bounds, type Handle } from './helpers'
 
 const MIN_DRAG = 2 // px (screen) before a pointer press counts as a drag
-
-/** Kebab lucide name → rendered glyph (icon picker). */
-function IconPreview({ name }: { name: string }) {
-  const Cmp = (icons as Record<string, LucideIcon>)[name.replace(/(^|[-])([a-z0-9])/g, (_, _s, c: string) => c.toUpperCase())]
-  return Cmp ? <Cmp aria-hidden="true" className="size-4" /> : null
-}
 const HANDLES: Handle[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']
 const HANDLE_CURSOR: Record<Handle, string> = {
   nw: 'nwse-resize', se: 'nwse-resize', ne: 'nesw-resize', sw: 'nesw-resize',
@@ -35,7 +28,7 @@ type Gesture =
 interface MarqueeState { x0: number; y0: number; x1: number; y1: number }
 
 export function EditorOverlay() {
-  const { project, index, scale, editor, dispatch, runCommand, tool, shapeName, setTool } = useDeckCtx()
+  const { project, index, scale, editor, dispatch, runCommand, tool, shapeName, iconName, setTool } = useDeckCtx()
   const page = project.pages[index]
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [gesture, setGesture] = useState<Gesture | null>(null)
@@ -154,8 +147,6 @@ export function EditorOverlay() {
   // --- creation (E3) --------------------------------------------------------
 
   const [create, setCreate] = useState<MarqueeState | null>(null)
-  const [iconPick, setIconPick] = useState<{ x: number; y: number } | null>(null)
-  const [iconQuery, setIconQuery] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
   const imageAt = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
 
@@ -168,13 +159,6 @@ export function EditorOverlay() {
     setTool('select') // Figma-style: return to Move after committing
   }, [index, runCommand, dispatch, setTool])
 
-  const pickIcon = (name: string) => {
-    const el = newIconElement(name, iconPick!.x, iconPick!.y)
-    runCommand(addElementCmd(index, el))
-    dispatch({ type: 'select', ids: [el.elementId] })
-    setIconPick(null)
-    setTool('select')
-  }
 
   // paste image → new element at canvas center
   useEffect(() => {
@@ -188,7 +172,7 @@ export function EditorOverlay() {
     return () => removeEventListener('paste', onPaste)
   }, [placeImage, project.size])
 
-  // shape/line: drag to draw (live preview via `create` state)
+  // shape/line/icon: drag to draw (live preview via `create` state); icon click = default 64px box
   const startCreate = (e: React.PointerEvent) => {
     const r = wrapRef.current!.getBoundingClientRect()
     const x0 = (e.clientX - r.left) / scale
@@ -204,8 +188,13 @@ export function EditorOverlay() {
       removeEventListener('pointerup', onUp)
       setCreate(null)
       const b = rectBounds(x0, y0, x1, y1)
-      if (b[2] < MIN_DRAG || b[3] < MIN_DRAG) return // too tiny — treat as nothing
-      const el = tool === 'shape' ? newShapeElement(shapeName, b) : newLineElement(b)
+      let el: Element | undefined
+      if (tool === 'icon') {
+        el = newIconElement(iconName, b[2] < MIN_DRAG || b[3] < MIN_DRAG ? [Math.round(x0) - 32, Math.round(y0) - 32, 64, 64] : b)
+      } else if (b[2] >= MIN_DRAG && b[3] >= MIN_DRAG) {
+        el = tool === 'shape' ? newShapeElement(shapeName, b) : newLineElement(b)
+      }
+      if (!el) return // too tiny — treat as nothing
       runCommand(addElementCmd(index, el))
       dispatch({ type: 'select', ids: [el.elementId] })
       setTool('select')
@@ -223,14 +212,8 @@ export function EditorOverlay() {
   // --- move / marquee -----------------------------------------------------------
   const onPointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0) return
-    if (tool === 'shape' || tool === 'line') return startCreate(e)
+    if (tool === 'shape' || tool === 'line' || tool === 'icon') return startCreate(e)
     if (tool === 'image') return startImagePick(e)
-    if (tool === 'icon') {
-      const r = wrapRef.current!.getBoundingClientRect()
-      setIconQuery('')
-      setIconPick({ x: (e.clientX - r.left) / scale, y: (e.clientY - r.top) / scale })
-      return
-    }
     const el = hit(e)
     if (el) {
       const additive = e.shiftKey
@@ -264,6 +247,14 @@ export function EditorOverlay() {
         removeEventListener('pointerup', onUp)
         setGesture(null)
         if (moved) {
+          // drop on a slide thumbnail → cross-page move
+          const drop = (document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null)?.closest('[data-slide]')
+          const target = drop ? Number((drop as HTMLElement).dataset.slide) : NaN
+          if (!Number.isNaN(target) && target !== index) {
+            runCommand(crossPageMoveCmd(index, target, ids))
+            dispatch({ type: 'deselect' })
+            return
+          }
           const dx = (ev.clientX - sx) / scale
           const dy = (ev.clientY - sy) / scale
           const x0 = Math.min(...dragged.map(el => el.bounds[0] + dx))
@@ -372,7 +363,7 @@ export function EditorOverlay() {
           ? gesture.bounds : [b[0], b[1], x1 - b[0], y1 - b[1]]
         return (
           <div className="absolute" style={{ left: gb[0], top: gb[1], width: gb[2], height: gb[3] }}
-            draggable onDragStart={e => { e.dataTransfer.setData('application/x-pptd-ids', JSON.stringify(selection)); e.dataTransfer.effectAllowed = 'move' }}>
+            onPointerDownCapture={() => {}}>
             <div className="pointer-events-none absolute inset-0 border border-accent border-dashed" aria-hidden="true" />
             {(['nw', 'ne', 'se', 'sw'] as Handle[]).map(h => (
               <div key={h} role="presentation" aria-label={`Resize ${h}`}
@@ -394,8 +385,6 @@ export function EditorOverlay() {
           <div
             className="absolute"
             style={{ left: b[0], top: b[1], width: b[2], height: b[3], transform: `rotate(${rot}deg)`, transformOrigin: 'center' }}
-            draggable
-            onDragStart={e => { e.dataTransfer.setData('application/x-pptd-ids', JSON.stringify(selection)); e.dataTransfer.effectAllowed = 'move' }}
           >
             <div className="pointer-events-none absolute inset-0 border-2 border-accent" aria-hidden="true" />
             {HANDLES.map(h => (
@@ -440,44 +429,6 @@ export function EditorOverlay() {
           aria-hidden="true"
         />
       )}
-      {/* icon search popover */}
-      {iconPick && (
-        <div
-          role="dialog"
-          aria-label="Pick an icon"
-          className="absolute z-30 w-64 rounded-xl border border-line bg-panel p-2 shadow-lg"
-          style={{ left: Math.min(iconPick.x, project.size[0] - 270), top: Math.min(iconPick.y, project.size[1] - 220) }}
-        >
-          <input
-            autoFocus
-            type="search"
-            placeholder="Search icons…"
-            className="mb-2 w-full rounded-md border border-line bg-transparent px-2 py-1 text-xs text-fg outline-none"
-            value={iconQuery}
-            onChange={e => setIconQuery(e.target.value)}
-            onKeyDown={e => {
-              e.stopPropagation()
-              if (e.key === 'Escape') setIconPick(null)
-              if (e.key === 'Enter') {
-                const first = ICONS.filter(n => n.includes(iconQuery.trim().toLowerCase()))[0]
-                if (first) pickIcon(first)
-              }
-            }}
-          />
-          <div className="grid max-h-40 grid-cols-6 gap-1 overflow-auto">
-            {ICONS.filter(n => n.includes(iconQuery.trim().toLowerCase())).slice(0, 48).map(n => (
-              <button
-                key={n}
-                title={n}
-                className="grid size-8 place-items-center rounded-md text-fg hover:bg-accent hover:text-zinc-900"
-                onClick={() => pickIcon(n)}
-              >
-                <IconPreview name={n} />
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={e => {
         const f = e.target.files?.[0]
         if (f) placeImage(f, imageAt.current.x, imageAt.current.y)
@@ -494,16 +445,3 @@ export function editingTextEl(page: { elements: Element[] }, editingId: string |
   return el && el.elementType === 'text' ? (el as TextElement) : undefined
 }
 
-// Common lucide icon names for the icon tool picker.
-// ponytail: static ~60-name list; swap to live lucide metadata search if users need more.
-const ICONS = [
-  'house', 'user', 'users', 'settings', 'star', 'heart', 'search', 'mail',
-  'phone', 'shopping-cart', 'truck', 'globe', 'calendar', 'clock', 'map-pin', 'bookmark',
-  'flag', 'tag', 'bell', 'message-circle', 'send', 'link', 'lock', 'key',
-  'shield-half', 'circle-check', 'circle-x', 'info', 'triangle-alert', 'plus', 'minus',
-  'check', 'x', 'arrow-right', 'arrow-left', 'arrow-up', 'arrow-down',
-  'chart-line', 'chart-column', 'chart-pie', 'file', 'folder', 'image', 'video',
-  'camera', 'music', 'play', 'code', 'bot', 'lightbulb', 'flame', 'trophy',
-  'medal', 'gift', 'sun', 'moon', 'cloud', 'zap', 'leaf', 'car', 'plane',
-  'rocket', 'wrench', 'briefcase', 'building', 'school', 'book', 'pen-line', 'pencil', 'trash', 'thumbs-up',
-]

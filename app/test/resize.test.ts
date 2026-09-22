@@ -127,7 +127,7 @@ describe('creation factories', () => {
   })
   it('newImageElement/newIconElement defaults', () => {
     assert.deepEqual(newImageElement('blob:x', [0, 0, 10, 10]).fit, { mode: 'cover' })
-    const i = newIconElement('house', 100, 100)
+    const i = newIconElement('house', [68, 68, 64, 64])
     assert.equal(i.iconName, 'house')
     assert.deepEqual(i.bounds, [68, 68, 64, 64])
   })

@@ -20,9 +20,9 @@ describe('Deck helpers', () => {
     assert.equal(thumbScale(112, 1280), (112 - 12) / 1280)
     assert.equal(thumbScale(0, 1280), 0)
   })
-  it('newTextElement: centered on point, sane defaults, unique ids', () => {
+  it('newTextElement: anchored top-left on point, sane defaults, unique ids', () => {
     const a = newTextElement(300, 200)
-    assert.deepEqual(a.bounds, [200, 184, 200, 32])
+    assert.deepEqual(a.bounds, [300, 200, 200, 32])
     assert.equal(a.elementType, 'text')
     assert.equal(a.content.text, 'Text')
     assert.notEqual(a.elementId, newTextElement(0, 0).elementId)
