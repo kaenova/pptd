@@ -136,3 +136,31 @@ describe('E5 commands', () => {
     assert.deepEqual(reorderCmd(0, ['c'], 'back').do(p).pages[0].elements.map(e => e.elementId), ['c', 'a', 'b'])
   })
 })
+
+describe('crossPageMoveCmd id collisions', () => {
+  it('reassigns id colliding on target page; undo restores original', () => {
+    const el = (id: string): Element => ({ elementId: id, elementType: 'text', bounds: [0, 0, 100, 50], content: { text: 'hi' } } as Element)
+    const pg = (els: Element[]) => ({ pageId: 'p', pageType: 'cover', elements: els, animations: [] } as LoadedProject['pages'][number])
+    const p = { title: 't', size: [960, 540], theme: {} as never, pages: [pg([el('b')]), pg([el('b')])] } as LoadedProject
+    const cmd = crossPageMoveCmd(0, 1, ['b'])
+    const done = cmd.do(p)
+    const t = done.pages[1].elements
+    assert.equal(t.length, 2)
+    assert.notEqual(t[0].elementId, t[1].elementId) // unique React keys
+    assert.equal(done.pages[0].elements.length, 0)
+    const undone = cmd.undo(done)
+    assert.deepEqual(undone.pages[0].elements.map(e => e.elementId), ['b']) // original id restored
+    assert.deepEqual(undone.pages[1].elements.map(e => e.elementId), ['b'])
+  })
+  it('StrictMode double-invocation: do twice, undo the committed result', () => {
+    const el = (id: string): Element => ({ elementId: id, elementType: 'text', bounds: [0, 0, 100, 50], content: { text: 'hi' } } as Element)
+    const pg = (els: Element[]) => ({ pageId: 'p', pageType: 'cover', elements: els, animations: [] } as LoadedProject['pages'][number])
+    const p = { title: 't', size: [960, 540], theme: {} as never, pages: [pg([el('b')]), pg([el('b')])] } as LoadedProject
+    const cmd = crossPageMoveCmd(0, 1, ['b'])
+    cmd.do(p) // first invocation discarded by React
+    const done = cmd.do(p) // committed
+    const undone = cmd.undo(done)
+    assert.deepEqual(undone.pages[0].elements.map(e => e.elementId), ['b'])
+    assert.deepEqual(undone.pages[1].elements.map(e => e.elementId), ['b'])
+  })
+})

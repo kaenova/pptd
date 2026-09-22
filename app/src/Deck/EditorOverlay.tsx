@@ -28,7 +28,7 @@ type Gesture =
 interface MarqueeState { x0: number; y0: number; x1: number; y1: number }
 
 export function EditorOverlay() {
-  const { project, index, scale, editor, dispatch, runCommand, tool, shapeName } = useDeckCtx()
+  const { project, index, scale, editor, dispatch, runCommand, tool, shapeName, setTool } = useDeckCtx()
   const page = project.pages[index]
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [gesture, setGesture] = useState<Gesture | null>(null)
@@ -158,13 +158,15 @@ export function EditorOverlay() {
     const el = newImageElement(src, [Math.round(x - 150), Math.round(y - 100), 300, 200])
     runCommand(addElementCmd(index, el))
     dispatch({ type: 'select', ids: [el.elementId] })
-  }, [index, runCommand, dispatch])
+    setTool('select') // Figma-style: return to Move after committing
+  }, [index, runCommand, dispatch, setTool])
 
   const pickIcon = (name: string) => {
     const el = newIconElement(`fas:${name}`, iconPick!.x, iconPick!.y)
     runCommand(addElementCmd(index, el))
     dispatch({ type: 'select', ids: [el.elementId] })
     setIconPick(null)
+    setTool('select')
   }
 
   // paste image → new element at canvas center
@@ -199,6 +201,7 @@ export function EditorOverlay() {
       const el = tool === 'shape' ? newShapeElement(shapeName, b) : newLineElement(b)
       runCommand(addElementCmd(index, el))
       dispatch({ type: 'select', ids: [el.elementId] })
+      setTool('select')
     }
     addEventListener('pointermove', onMove)
     addEventListener('pointerup', onUp)

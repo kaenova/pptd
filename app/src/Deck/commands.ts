@@ -132,15 +132,54 @@ export function duplicateCmd(pageIndex: number, els: Element[]): Command {
 
 /** Move elements from one page to another; undo moves them back (order preserved per group). */
 export function crossPageMoveCmd(from: number, to: number, ids: string[]): Command {
-  const move = (p: LoadedProject, src: number, dst: number) => {
-    const els = p.pages[src].elements.filter(e => ids.includes(e.elementId))
+  // Pure (StrictMode-safe: do/undo are deterministic functions of the project —
+  // React double-invokes updaters, so no closure mutation allowed here).
+  // Pages legitimately reuse elementIds (e.g. yu7 page-num on every page); a moved
+  // element colliding on the target page gets a deterministic `@N` suffix, which
+  // undo strips to restore the original id.
+  const do_ = (p: LoadedProject) => {
+    const moving = p.pages[from].elements.filter(e => ids.includes(e.elementId))
+    const dstIds = new Set(p.pages[to].elements.map(e => e.elementId))
+    const placed = moving.map(e => {
+      if (!dstIds.has(e.elementId)) return e
+      let name = `${e.elementId}@${to}`
+      while (dstIds.has(name)) name += '~'
+      dstIds.add(name)
+      return { ...e, elementId: name }
+    })
     return {
       ...p,
       pages: p.pages.map((pg, i) =>
-        i === src ? { ...pg, elements: pg.elements.filter(e => !ids.includes(e.elementId)) }
-        : i === dst ? { ...pg, elements: [...pg.elements, ...els] }
+        i === from ? { ...pg, elements: pg.elements.filter(e => !ids.includes(e.elementId)) }
+        : i === to ? { ...pg, elements: [...pg.elements, ...placed] }
         : pg),
     }
   }
-  return { label: 'move across pages', do: p => move(p, from, to), undo: p => move(p, to, from) }
+  const undo_ = (p: LoadedProject) => {
+    // Collision disambiguation (pure): if a suffixed twin `id@to` exists on the
+    // target page, the plain-id element there is the target's own — only the
+    // suffixed ones move back. Otherwise the plain-id element is the moved one.
+    const dst = p.pages[to].elements
+    const restored: Element[] = []
+    const backIds = new Set<string>()
+    for (const id of ids) {
+      const prefix = `${id}@${to}`
+      const suffixed = dst.filter(e => e.elementId.startsWith(prefix))
+      if (suffixed.length) {
+        for (const e of suffixed) { restored.push({ ...e, elementId: id }); backIds.add(e.elementId) }
+      } else {
+        const plain = dst.find(e => e.elementId === id)
+        if (plain) { restored.push(plain); backIds.add(plain.elementId) }
+      }
+    }
+    return {
+      ...p,
+      pages: p.pages.map((pg, i) =>
+        i === to ? { ...pg, elements: pg.elements.filter(e => !backIds.has(e.elementId)) }
+        : i === from ? { ...pg, elements: [...pg.elements, ...restored] }
+        : pg),
+    }
+  }
+  return { label: 'move across pages', do: do_, undo: undo_ }
 }
+

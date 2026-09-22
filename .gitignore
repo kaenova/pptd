@@ -19,3 +19,6 @@ _user_meta.json
 
 # QA reference PNGs — regenerable via `python3 -m pptd_utils png all <deck>.pptd`
 skills/cowork-ppt/example/**/*-png/
+
+# Agent Harness Directory
+.pi
