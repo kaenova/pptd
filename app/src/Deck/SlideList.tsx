@@ -10,12 +10,14 @@ import { useDragResize } from '../useDragResize'
 // --- sidebar -----------------------------------------------------------------
 
 export function DeckSlideList() {
-  const { project, index, present, selectSlide, thumbW } = useDeckCtx()
-  const [width, onResize] = useDragResize(176, 'x', 128, 480, -1) // anchored right — drag left = wider
-  if (present) return null
+  const { project, index, present, mode, selectSlide, thumbW } = useDeckCtx()
+  const [width, onResize] = useDragResize(176, 'x', 128, 480) // handle on right edge — drag right = wider
+  if (present || mode !== 'edit') return null
   return (
     <aside style={{ width }} className="relative flex flex-none flex-col gap-2 border-r border-line-soft bg-panel p-3 select-none" aria-label="Slide previews">
-      <div className="absolute inset-y-0 right-0 w-1.5 cursor-col-resize translate-x-1/2" onPointerDown={onResize} role="separator" aria-orientation="vertical" />
+      <div className="group absolute inset-y-0 right-0 w-1.5 cursor-col-resize translate-x-1/2" onPointerDown={onResize} role="separator" aria-orientation="vertical">
+        <div className="absolute inset-y-0 left-0 w-px bg-line group-hover:bg-accent" />
+      </div>
       <h2 className="text-[11px] font-semibold uppercase tracking-[.12em] text-muted">Slides</h2>
       <div className="flex flex-col gap-2 overflow-auto">
         {project.pages.map((_, i) => (

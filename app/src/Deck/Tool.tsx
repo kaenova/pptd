@@ -40,7 +40,8 @@ function IconGlyph({ name, className = 'size-4' }: { name: string; className?: s
 }
 
 export function DeckTool() {
-  const { present, tool, setTool, shapeName, setShapeName, iconName, setIconName, undo, redo, editor, grid, setGrid, replay, playing } = useDeckCtx()
+  const { present, mode, tool, setTool, shapeName, setShapeName, iconName, setIconName, undo, redo, editor, grid, setGrid, replay, playing } = useDeckCtx()
+  const canEdit = mode === 'edit'
   const [open, setOpen] = useState(false)
   const [iconOpen, setIconOpen] = useState(false)
   const [iconQuery, setIconQuery] = useState('')
@@ -49,7 +50,7 @@ export function DeckTool() {
 
   // shortcuts: V select, T text, R shape, L line, I image; Ctrl/Cmd+Z undo, +Shift redo
   useEffect(() => {
-    if (present) return
+    if (present || !canEdit) return
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement
       if (t.isContentEditable || t.tagName === 'INPUT' || t.tagName === 'TEXTAREA') return
@@ -70,7 +71,7 @@ export function DeckTool() {
     }
     addEventListener('keydown', onKey)
     return () => removeEventListener('keydown', onKey)
-  }, [present, setTool, undo, redo, grid, setGrid])
+  }, [present, mode, setTool, undo, redo, grid, setGrid])
 
   // close pickers on outside click
   useEffect(() => {
@@ -80,7 +81,7 @@ export function DeckTool() {
     return () => removeEventListener('pointerdown', close)
   }, [open, iconOpen, propsOpen])
 
-  if (present) return null
+  if (present || mode !== 'edit') return null
   const btn = (active: boolean) =>
     `grid size-8 place-items-center rounded-lg transition-colors ${active ? 'bg-accent text-zinc-900' : 'text-fg hover:bg-panel-raised'}`
   const ic = 'size-4'

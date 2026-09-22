@@ -88,7 +88,8 @@ export function textStyleProps(c: TextContent, theme: ThemeCtx): CSSProperties {
     backgroundColor: c.backgroundColor
       ? resolveColor(c.backgroundColor, theme)
       : undefined,
-    textAlign: ha === 'center' ? 'center' : ha === 'right' ? 'right' : ha === 'justify' ? 'justify' : ha === 'distributed' ? 'justify' : undefined,
+    // explicit default: left — thumbnails render inside <button>, whose UA text-align:center would otherwise be inherited
+    textAlign: ha === 'center' ? 'center' : ha === 'right' ? 'right' : ha === 'justify' ? 'justify' : ha === 'distributed' ? 'justify' : 'left',
     // vertical align: middle/bottom via flex on the box
     display: va === 'middle' || va === 'bottom' ? 'flex' : undefined,
     flexDirection: 'column',

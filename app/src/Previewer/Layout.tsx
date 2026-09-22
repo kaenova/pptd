@@ -39,7 +39,7 @@ export function PreviewerTitle() {
   return (
     <div className="flex items-center gap-2 text-[13px] text-fg">
       <span className="w-3.5 text-center text-[10px] text-muted">▤</span>
-      <span>{file}</span>
+      <span>{file?.split('/').pop()}</span>
     </div>
   )
 }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { LoadedProject } from './types'
-import { folderSource, loadProject, stripRoot, type FileSource } from './load'
+import { folderSource, loadProject, stripRoot, httpSource, type FileSource } from './load'
 import { Viewer } from './Viewer'
 import { FileExplorer } from './FileExplorer'
 import { FilePreviewer } from './FilePreviewer'
@@ -16,7 +16,8 @@ export function Shell() {
   const [showNotes, setShowNotes] = useState(false)
   const [present, setPresent] = useState(false)
   const [selectedFile, setSelectedFile] = useState<string | null>(null)
-  const [notesH, onNotesResize] = useDragResize(120, 'y', 48, 480) // px
+  const [mode, setMode] = useState<'read' | 'edit'>('edit')
+  const [notesH, onNotesResize] = useDragResize(120, 'y', 48, 480, -1) // notes anchored bottom — drag up = taller
   const qaDeck = useMemo(() => param('qa'), [])
 
   const show = useCallback((p: LoadedProject, src: FileSource) => {
@@ -37,6 +38,13 @@ export function Shell() {
     }
   }, [show])
 
+
+  // dev convenience: ?deck=<url> auto-loads a deck over HTTP (no upload needed)
+  useEffect(() => {
+    const u = param('deck')
+    if (!u) return
+    loadProject(httpSource(u)).then(p => { setProject(p); setSource(httpSource(u)) }).catch(e => setStatus({ msg: String(e), err: true }))
+  }, [])
 
   // inject deck-supplied fonts (spec: CustomFont.src is a Google Fonts CSS URL)
   useEffect(() => {
@@ -84,7 +92,8 @@ export function Shell() {
   }, [present])
 
   const n = project?.pages.length ?? 0
-  const notes = project && showNotes ? project.pages[cur]?.notes : undefined
+  const notes = project?.pages[cur]?.notes
+  const setNotes = (text: string) => setProject(p => p ? { ...p, pages: p.pages.map((pg, i) => i === cur ? { ...pg, notes: text } : pg) } : p)
   const refSrc =
     project && qaDeck && project.pptdPath
       ? `/example/${qaDeck}/${project.pptdPath.replace(/.*\//, '').replace(/\.pptd$/, '')}-png/slide_${String(cur + 1).padStart(2, '0')}.png`
@@ -99,6 +108,8 @@ export function Shell() {
           currentSlide={cur}
           onSlideChange={setCur}
           onFileSelect={setSelectedFile}
+          mode={mode}
+          onModeChange={setMode}
         />
       )}
       <main className="flex min-w-0 flex-1 flex-col">
@@ -123,7 +134,7 @@ export function Shell() {
         <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-auto">
           {project ? (
             <div className="flex h-full min-w-0 w-full">
-              <Viewer project={project} index={cur} onSlideChange={setCur} present={present} onProjectChange={fn => setProject(p => (p ? fn(p) : p))} onComment={(componentRef, comment) => { void navigator.clipboard?.writeText(comment ? `${componentRef}: ${comment}` : componentRef); setStatus({ msg: 'Comments Copied', err: false }) }} />
+              <Viewer project={project} index={cur} onSlideChange={setCur} present={present} features={{ mode }} onProjectChange={fn => setProject(p => (p ? fn(p) : p))} onComment={(componentRef, comment) => { void navigator.clipboard?.writeText(comment ? `${componentRef}: ${comment}` : componentRef); setStatus({ msg: 'Comments Copied', err: false }) }} />
               {refSrc && (
                 <figure className="flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center">
                   <img src={refSrc} alt={`soffice reference, slide ${cur + 1}`} className="min-h-0 max-h-full max-w-full flex-1 rounded-lg border border-line object-contain" />
@@ -145,12 +156,12 @@ export function Shell() {
           )}
         </div>
 
-        {!present && notes && (
+        {!present && showNotes && project && (
           <>
             <div className="group relative h-2 cursor-row-resize" onPointerDown={onNotesResize} role="separator" aria-orientation="horizontal">
               <div className="absolute inset-x-0 top-0 h-px bg-line group-hover:bg-accent" />
             </div>
-            <div className="border-t border-line bg-panel-raised overflow-auto px-5 py-3 whitespace-pre-wrap text-dim" style={{ height: notesH }}>{notes}</div>
+            <textarea value={notes ?? ''} onChange={e => setNotes(e.target.value)} spellCheck={false} placeholder="Add notes…" className="w-full resize-none border-t border-line bg-panel-raised px-5 py-3 text-dim outline-none placeholder:text-muted" style={{ height: notesH }} />
           </>
         )}
 

@@ -12,7 +12,8 @@ import { DeckTool } from './Tool'
 let clipboard: import('../types').Element[] = []
 
 export function DeckStage({ children }: { children: ReactNode }) {
-  const { project, index, present, scale, tool, setTool, editor, dispatch, runCommand, setScale: setCtxScale } = useDeckCtx()
+  const { project, index, present, mode, scale, tool, setTool, editor, dispatch, runCommand, setScale: setCtxScale } = useDeckCtx()
+  const canEdit = !present && mode === 'edit'
   const stageRef = useRef<HTMLDivElement>(null)
 
   // RO → fit(); scale lives in Root context so Canvas (and anything else) reads it
@@ -46,7 +47,7 @@ export function DeckStage({ children }: { children: ReactNode }) {
   // editor keys: Esc deselect, Delete/Backspace delete, Ctrl+D duplicate, [/] layer, Ctrl+C/V copy/paste
   const selectionEls = project.pages[index]?.elements.filter(e => editor.selection.includes(e.elementId)) ?? []
   useEffect(() => {
-    if (present) return
+    if (!canEdit) return
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement
       if (t.isContentEditable || t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT') return
@@ -73,16 +74,17 @@ export function DeckStage({ children }: { children: ReactNode }) {
     }
     addEventListener('keydown', onKey)
     return () => removeEventListener('keydown', onKey)
-  }, [present, index, editor, dispatch, runCommand, selectionEls])
+  }, [canEdit, index, editor, dispatch, runCommand, selectionEls])
 
   return (
     <div
       ref={stageRef}
-      className={`relative flex h-full min-w-0 flex-1 items-center justify-center${tool === 'text' ? ' cursor-text' : ''}${!present ? ' select-none' : ''}`}
+      className={`relative flex h-full min-w-0 flex-1 items-center justify-center${tool === 'text' ? ' cursor-text' : ''}${canEdit ? ' select-none' : ''}`}
       onClick={e => {
+        if (!canEdit) return
         if (tool === 'text') addTextAt(e)
         // click outside the canvas (stage chrome / toolbar & its popovers) → deselect, Figma-style
-        else if (!present && !(e.target as Element).closest('#canvasWrap, [data-deck-tools]') && editor.selection.length) dispatch({ type: 'deselect' })
+        else if (!(e.target as Element).closest('#canvasWrap, [data-deck-tools]') && editor.selection.length) dispatch({ type: 'deselect' })
       }}
     >
       <DeckTool />

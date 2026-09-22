@@ -54,7 +54,7 @@ interface DeckCtx {
   replay: () => void
   selectSlide: (i: number) => void
   onSelect?: (selection: ComponentSelection) => void
-  /** Comment pin (Figma-style): componentRef is "*.page>{elementId}". */
+  /** Comment pin (Figma-style): componentRef is "{pageIndex}.page>{elementId}". */
   onComment?: (componentRef: string, comment?: string) => void
 }
 

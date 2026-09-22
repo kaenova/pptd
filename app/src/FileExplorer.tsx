@@ -9,12 +9,14 @@ interface FileExplorerProps {
   currentSlide: number
   onSlideChange: (index: number) => void
   onFileSelect?: (filePath: string) => void
+  mode?: 'read' | 'edit'
+  onModeChange?: (mode: 'read' | 'edit') => void
 }
 
 const treeRow = 'flex min-h-8 w-full items-center gap-2 rounded-md border-0 bg-transparent px-[9px] text-left text-dim font-[inherit]'
 const treeHover = 'hover:bg-panel-raised hover:text-fg'
 
-export function FileExplorer({ project, onFiles, currentSlide, onSlideChange, onFileSelect }: FileExplorerProps) {
+export function FileExplorer({ project, onFiles, currentSlide, onSlideChange, onFileSelect, mode = 'edit', onModeChange }: FileExplorerProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const chooseFolder = () => inputRef.current?.click()
   const onChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -30,10 +32,24 @@ export function FileExplorer({ project, onFiles, currentSlide, onSlideChange, on
       onDragOver={event => event.preventDefault()}
       onDrop={onDrop}
     >
-      <div className="flex min-h-[72px] items-center border-b border-line-soft px-4 py-3">
+      <div className="flex min-h-[72px] items-center justify-between gap-2 border-b border-line-soft px-4 py-3">
         <div>
           <div className="text-[10px] font-semibold uppercase tracking-[.12em] text-muted">Workspace</div>
           <h1 className="mt-[3px] text-[15px] tracking-tight">PPTD Viewer and Editor</h1>
+        </div>
+        <div role="tablist" aria-label="Mode" className="flex rounded-lg border border-line p-0.5 text-[11px]">
+          {(['read', 'edit'] as const).map(m => (
+            <button
+              key={m}
+              role="tab"
+              aria-selected={mode === m}
+              type="button"
+              className={`rounded-md px-2.5 py-1 capitalize transition-colors ${mode === m ? 'bg-accent font-semibold text-zinc-900' : 'text-dim hover:text-fg'}`}
+              onClick={() => onModeChange?.(m)}
+            >
+              {m}
+            </button>
+          ))}
         </div>
       </div>
       <input
@@ -73,7 +89,7 @@ export function FileExplorer({ project, onFiles, currentSlide, onSlideChange, on
                 onDoubleClick={() => project.pagePaths?.[index] && onFileSelect?.(project.pagePaths[index])}
               >
                 <span className="w-3.5 text-center text-[10px] text-sky-400">▤</span>
-                <span>slide-{String(index + 1).padStart(2, '0')}.page</span>
+                <span>{project.pagePaths?.[index]?.split('/').pop() ?? `slide-${String(index + 1).padStart(2, '0')}.page`}</span>
               </button>
             ))}
             <div className={treeRow}>
@@ -84,7 +100,7 @@ export function FileExplorer({ project, onFiles, currentSlide, onSlideChange, on
             {project.media?.map((file: string) => (
               <button className={`${treeRow} cursor-pointer pl-[31px] ${treeHover}`} type="button" key={file} onDoubleClick={() => onFileSelect?.(file)}>
                 <span className="w-3.5 text-center text-[10px] text-muted">◆</span>
-                <span>{file}</span>
+                <span>{file.split('/').pop()}</span>
               </button>
             ))}
           </div>

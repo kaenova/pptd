@@ -8,10 +8,10 @@ import { TextEditor } from './TextEditor'
 import { EditorOverlay, editingTextEl } from './EditorOverlay'
 
 export function DeckCanvas() {
-  const { project, index, present, scale, playing, playToken, onSelect, editor, dispatch, runCommand, grid } = useDeckCtx()
+  const { project, index, present, mode, scale, playing, playToken, onSelect, editor, dispatch, runCommand, grid } = useDeckCtx()
   const [w, h] = project.size
   if (!project.pages[index]) return null
-  const editActive = !present // overlay handles all tools (select + creation); playing only affects animation playback
+  const editActive = !present && mode === 'edit' // overlay handles all tools (select + creation); playing only affects animation playback
   const editingEl = editActive ? editingTextEl(project.pages[index], editor.editingId) : undefined
   return (
     <div

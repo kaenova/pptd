@@ -3,10 +3,11 @@
  * Styling and part arrangement live here; logic lives in Deck.tsx.
  */
 import { DeckRoot, DeckSlideList, DeckStage, DeckCanvas } from './Deck'
+import type { DeckFeatures } from './Deck/context'
 import type { LoadedProject } from './types'
 import type { ComponentSelection } from './select'
 
-export function Viewer({ project, index, onSelect, onSlideChange, onProjectChange, onComment, present = false }: {
+export function Viewer({ project, index, onSelect, onSlideChange, onProjectChange, onComment, present = false, features }: {
   project: LoadedProject
   index: number
   onSelect?: (selection: ComponentSelection) => void
@@ -14,9 +15,10 @@ export function Viewer({ project, index, onSelect, onSlideChange, onProjectChang
   onSlideChange?: (index: number) => void
   onProjectChange?: (fn: (p: LoadedProject) => LoadedProject) => void
   present?: boolean
+  features?: DeckFeatures
 }) {
   return (
-    <DeckRoot project={project} index={index} present={present} onSelect={onSelect} onSlideChange={onSlideChange} onProjectChange={onProjectChange} onComment={onComment}>
+    <DeckRoot project={project} index={index} present={present} features={features} onSelect={onSelect} onSlideChange={onSlideChange} onProjectChange={onProjectChange} onComment={onComment}>
       <DeckSlideList />
       <DeckStage>
         <DeckCanvas />

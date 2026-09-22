@@ -100,9 +100,9 @@ function ShadowEditor({ shadow, onChange }: { shadow: Shadow | undefined; onChan
 // ---------- panel ----------
 
 export function PropertyPanel() {
-  const { project, index, present, editor, runCommand } = useDeckCtx()
+  const { project, index, present, mode, editor, runCommand } = useDeckCtx()
   const [pageMode, setPageMode] = useState(false)
-  if (present) return null
+  if (present || mode !== 'edit') return null
 
   const page = project.pages[index]
   const sel = page.elements.filter(e => editor.selection.includes(e.elementId))

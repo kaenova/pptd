@@ -4,6 +4,7 @@
  * drag-move, marquee, double-click-to-edit. Renderers stay dumb.
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { Element, TextElement } from '../types'
 import { ArrowRight } from 'lucide-react'
 import { useDeckCtx } from './context'
@@ -30,12 +31,15 @@ type Gesture =
 interface MarqueeState { x0: number; y0: number; x1: number; y1: number }
 
 export function EditorOverlay() {
-  const { project, index, scale, editor, dispatch, runCommand, tool, shapeName, iconName, setTool, onComment } = useDeckCtx()
+  const { project, index, scale, editor, dispatch, runCommand, tool, shapeName, iconName, setTool, onComment, mode } = useDeckCtx()
+  const canEdit = mode === 'edit'
   const page = project.pages[index]
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   // comment tool: element awaiting a comment (Figma-style popover)
   const [commentEl, setCommentEl] = useState<Element | null>(null)
   const [commentText, setCommentText] = useState('')
+  const [commentedIds, setCommentedIds] = useState<string[]>([])
+  const [commentAt, setCommentAt] = useState<[number, number] | null>(null) // popover anchor: click point (screen coords; portal to body so it can't overflow the canvas)
   // clear hover when the pointer leaves the app window (deck) entirely
   useEffect(() => {
     const clear = () => setHoveredId(null)
@@ -225,10 +229,12 @@ export function EditorOverlay() {
   }
 
   // comment tool: submit/cancel the popover
-  const closeComment = useCallback(() => { setCommentEl(null); setCommentText('') }, [])
+  const closeComment = useCallback(() => { setCommentEl(null); setCommentText(''); setCommentedIds([]); setCommentAt(null) }, [])
   const submitComment = () => {
     if (!commentEl) return
-    onComment?.(`*.page>${commentEl.elementId}`, commentText.trim() || undefined)
+    const fileName = project.pagePaths?.[index]?.split('/').pop() ?? `${index}.page`
+    onComment?.(`${fileName}>${commentEl.elementId}`, commentText.trim() || undefined)
+    setCommentedIds(ids => ids.includes(commentEl.elementId) ? ids : [...ids, commentEl.elementId])
     closeComment()
     setTool('select')
   }
@@ -237,7 +243,7 @@ export function EditorOverlay() {
 
   // --- move / marquee -----------------------------------------------------------
   const onPointerDown = (e: React.PointerEvent) => {
-    if (e.button !== 0) return
+    if (e.button !== 0 || !canEdit) return
     if (tool === 'shape' || tool === 'line' || tool === 'icon') return startCreate(e)
     if (tool === 'image') return startImagePick(e)
     // comment tool: click a component → open comment popover (Figma-style)
@@ -245,6 +251,7 @@ export function EditorOverlay() {
       const el = hit(e)
       setCommentEl(el ?? null)
       setCommentText('')
+      setCommentAt(el ? [e.clientX, e.clientY] : null)
       return
     }
     const el = hit(e)
@@ -332,6 +339,7 @@ export function EditorOverlay() {
   }
 
   const onDoubleClick = (e: React.MouseEvent) => {
+    if (!canEdit) return
     const el = hit(e)
     if (el) {
       dispatch({ type: 'select', ids: [el.elementId] })
@@ -346,8 +354,11 @@ export function EditorOverlay() {
     }
   }
 
-  // hover tracking; suppressed while something is selected
-  const hovered = !selection.length ? page.elements.find(el => el.elementId === hoveredId) : undefined
+  // hover tracking; suppressed while something is selected or highlightHover is off
+  const { highlightHover } = useDeckCtx()
+  const hoverOn = highlightHover || (tool === 'comment' && !commentEl) // comment tool highlights while picking; once an object is picked, defer to the feature flag again
+  const commentedOn = new Set([...commentedIds, commentEl?.elementId ?? ''])
+  const hovered = hoverOn && !selection.length ? page.elements.find(el => el.elementId === hoveredId && !commentedOn.has(el.elementId)) : undefined
   const selEls = page.elements.filter(el => selection.includes(el.elementId))
   const single = selEls.length === 1 && selEls[0].elementId !== editingId ? selEls[0] : undefined
   const busy = gesture !== null
@@ -357,7 +368,7 @@ export function EditorOverlay() {
       ref={wrapRef}
       className="absolute inset-0 z-10"
       data-overlay="bg"
-      style={{ cursor: busy ? 'grabbing' : tool === 'text' ? 'text' : tool !== 'select' ? 'crosshair' : hovered ? 'pointer' : 'default' }}
+      style={{ cursor: busy ? 'grabbing' : !canEdit ? 'default' : tool === 'text' ? 'text' : tool !== 'select' ? 'crosshair' : hovered ? 'pointer' : 'default' }}
       onPointerDown={onPointerDown}
       onDoubleClick={onDoubleClick}
       onDragOver={e => e.preventDefault()}
@@ -368,7 +379,7 @@ export function EditorOverlay() {
         const r = wrapRef.current!.getBoundingClientRect()
         placeImage(file, (e.clientX - r.left) / scale, (e.clientY - r.top) / scale)
       }}
-      onMouseMove={e => { const el = hit(e); setHoveredId(el?.elementId ?? null) }}
+      onMouseMove={e => { if (!hoverOn) return; const el = hit(e); setHoveredId(el?.elementId ?? null) }}
       onMouseLeave={() => setHoveredId(null)}
     >
       {/* move live preview: translated outlines */}
@@ -446,6 +457,10 @@ export function EditorOverlay() {
         )
       })()}
       {hovered && <div className="pointer-events-none absolute border-2 border-[#ff6900] bg-[#ff69001a]" style={{ left: hovered.bounds[0], top: hovered.bounds[1], width: hovered.bounds[2], height: hovered.bounds[3] }} aria-hidden="true" />}
+      {/* persistent highlight: open popover target + already-commented elements */}
+      {[...new Set([commentEl?.elementId, ...(tool === 'comment' ? commentedIds : [])])].map(id => id && page.elements.find(el => el.elementId === id)).filter((el): el is Element => !!el).map(el => (
+        <div key={el.elementId} className="pointer-events-none absolute border-2 border-[#ff6900] bg-[#ff69001a]" style={{ left: el.bounds[0], top: el.bounds[1], width: el.bounds[2], height: el.bounds[3] }} aria-hidden="true" />
+      ))}
       {/* marquee */}
       {marquee && (
         <div
@@ -475,11 +490,11 @@ export function EditorOverlay() {
           )}
         </svg>
       )}
-      {/* comment popover (comment tool): minimal, anchored below the element */}
-      {commentEl && (
+      {/* comment popover (comment tool): portal to body, anchored at the click point; outside canvasWrap so its autofocus can't scroll/overflow the scaled canvas */}
+      {commentEl && createPortal(
         <div
-          className="absolute z-20 w-44 rounded-md border border-line bg-panel p-1.5 text-xs shadow-lg"
-          style={{ left: commentEl.bounds[0], top: commentEl.bounds[1] + commentEl.bounds[3] + 6 }}
+          className="fixed z-50 w-44 rounded-md border border-line bg-panel p-1.5 text-xs shadow-lg"
+          style={{ left: commentAt?.[0], top: (commentAt?.[1] ?? 0) + 8 }}
           aria-label="Add comment"
           onPointerDown={e => e.stopPropagation()}
         >
@@ -499,7 +514,8 @@ export function EditorOverlay() {
               <ArrowRight className="size-3.5" aria-hidden="true" />
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={e => {
         const f = e.target.files?.[0]
