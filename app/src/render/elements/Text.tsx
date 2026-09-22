@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import type { TextElement } from '../../types'
-import { useTheme, textStyleProps } from '../../theme'
+import { useTheme, textStyleProps, type ThemeCtx } from '../../theme'
 import { fillStyle } from '../Fill'
 import { RichText } from '../RichText'
 
@@ -9,10 +9,10 @@ function boundsStyle(b: [number, number, number, number]): CSSProperties {
   return { position: 'absolute', left: x, top: y, width: w, height: h }
 }
 
-export function TextBlock(el: TextElement) {
-  const theme = useTheme()
+/** Box + typography CSS for a text element — shared by renderer and in-place editor. */
+export function textBlockStyle(el: TextElement, theme: ThemeCtx): CSSProperties {
   const c = el.content
-  const style: CSSProperties = {
+  return {
     ...boundsStyle(el.bounds),
     overflow: 'hidden',
     ...textStyleProps(c, theme),
@@ -33,9 +33,13 @@ export function TextBlock(el: TextElement) {
       ? { filter: `drop-shadow(${c.shadow.offset?.[0] ?? 0}px ${c.shadow.offset?.[1] ?? 0}px ${c.shadow.blur}px ${c.shadow.color})` }
       : {}),
   }
+}
+
+export function TextBlock(el: TextElement) {
+  const theme = useTheme()
   return (
-    <div className="absolute" data-id={el.elementId} style={style}>
-      <RichText content={c} base={c.gradient ? { color: 'transparent' } : undefined} />
+    <div className="absolute" data-id={el.elementId} style={textBlockStyle(el, theme)}>
+      <RichText content={el.content} base={el.content.gradient ? { color: 'transparent' } : undefined} />
     </div>
   )
 }

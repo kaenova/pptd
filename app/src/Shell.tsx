@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { LoadedProject } from './types'
-import { folderSource, filesFromDrop, loadProject, stripRoot, type FileSource } from './load'
+import { folderSource, loadProject, stripRoot, type FileSource } from './load'
 import { Viewer } from './Viewer'
 import { FileExplorer } from './FileExplorer'
 import { FilePreviewer } from './FilePreviewer'
@@ -125,22 +125,10 @@ export function Shell() {
           </>
         )}
 
-        <div
-          className="relative flex min-h-0 flex-1 items-center justify-center overflow-auto [&.dragover]:outline-2 [&.dragover]:outline-accent"
-          onDragOver={e => {
-            e.preventDefault()
-            e.currentTarget.classList.add('dragover')
-          }}
-          onDragLeave={e => e.currentTarget.classList.remove('dragover')}
-          onDrop={async e => {
-            e.preventDefault()
-            e.currentTarget.classList.remove('dragover')
-            void filesFromDrop(e.dataTransfer.items).then(handleFiles)
-          }}
-        >
+        <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-auto">
           {project ? (
             <div className="flex h-full min-w-0 w-full">
-              <Viewer project={project} index={cur} onSlideChange={setCur} present={present} />
+              <Viewer project={project} index={cur} onSlideChange={setCur} present={present} onProjectChange={fn => setProject(p => (p ? fn(p) : p))} />
               {refSrc && (
                 <figure className="flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center">
                   <img src={refSrc} alt={`soffice reference, slide ${cur + 1}`} className="min-h-0 max-h-full max-w-full flex-1 rounded-lg border border-line object-contain" />
@@ -151,7 +139,7 @@ export function Shell() {
           ) : (
             <div className="grid min-h-[200px] place-items-center p-10 text-dim">
               <p>
-                <b>Drop a PPTD project folder here</b>
+                <b>Open a PPTD project folder</b>
               </p>
               <p className="mt-2 text-center text-xs">
                 expected layout:

@@ -1,6 +1,6 @@
 import { describe, it } from 'bun:test'
 import { strict as assert } from 'assert'
-import { fitScale, thumbScale } from '../src/Deck'
+import { fitScale, thumbScale, newTextElement } from '../src/Deck'
 
 describe('Deck helpers', () => {
   const size = [1280, 720] as const
@@ -19,5 +19,12 @@ describe('Deck helpers', () => {
   it('thumbScale: subtracts 12px padding, guards zero', () => {
     assert.equal(thumbScale(112, 1280), (112 - 12) / 1280)
     assert.equal(thumbScale(0, 1280), 0)
+  })
+  it('newTextElement: centered on point, sane defaults, unique ids', () => {
+    const a = newTextElement(300, 200)
+    assert.deepEqual(a.bounds, [200, 184, 200, 32])
+    assert.equal(a.elementType, 'text')
+    assert.equal(a.content.text, 'Text')
+    assert.notEqual(a.elementId, newTextElement(0, 0).elementId)
   })
 })

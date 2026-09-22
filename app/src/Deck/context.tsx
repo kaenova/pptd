@@ -5,6 +5,9 @@ import { createContext, useContext } from 'react'
 import type { LoadedProject } from '../types'
 import type { ComponentSelection } from '../select'
 
+/** Active edit tool (Figma-style). */
+export type Tool = 'select' | 'text'
+
 interface DeckCtx {
   project: LoadedProject
   index: number
@@ -13,8 +16,16 @@ interface DeckCtx {
   playing: boolean
   playToken: number
   thumbW: number
+  tool: Tool
+  selectedId: string | null
+  editingId: string | null
   setScale: (s: number) => void
   setThumbW: (w: number) => void
+  setTool: (t: Tool) => void
+  setSelectedId: (id: string | null) => void
+  setEditingId: (id: string | null) => void
+  /** Patch the loaded project (page/element edits). Undefined in read-only decks. */
+  patchProject?: (fn: (p: LoadedProject) => LoadedProject) => void
   replay: () => void
   selectSlide: (i: number) => void
   onSelect?: (selection: ComponentSelection) => void

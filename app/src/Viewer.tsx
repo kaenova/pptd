@@ -6,15 +6,16 @@ import { DeckRoot, DeckSlideList, DeckStage, DeckCanvas } from './Deck'
 import type { LoadedProject } from './types'
 import type { ComponentSelection } from './select'
 
-export function Viewer({ project, index, onSelect, onSlideChange, present = false }: {
+export function Viewer({ project, index, onSelect, onSlideChange, onProjectChange, present = false }: {
   project: LoadedProject
   index: number
   onSelect?: (selection: ComponentSelection) => void
   onSlideChange?: (index: number) => void
+  onProjectChange?: (fn: (p: LoadedProject) => LoadedProject) => void
   present?: boolean
 }) {
   return (
-    <DeckRoot project={project} index={index} present={present} onSelect={onSelect} onSlideChange={onSlideChange}>
+    <DeckRoot project={project} index={index} present={present} onSelect={onSelect} onSlideChange={onSlideChange} onProjectChange={onProjectChange}>
       <DeckSlideList />
       <DeckStage>
         <DeckCanvas />

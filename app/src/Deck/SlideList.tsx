@@ -12,7 +12,7 @@ export function DeckSlideList() {
   const { project, index, present, selectSlide, thumbW } = useDeckCtx()
   if (present) return null
   return (
-    <aside className="flex w-[176px] max-sm:w-[128px] flex-none flex-col gap-2 border-r border-line-soft bg-panel p-3" aria-label="Slide previews">
+    <aside className="flex w-[176px] max-sm:w-[128px] flex-none flex-col gap-2 border-r border-line-soft bg-panel p-3 select-none" aria-label="Slide previews">
       <h2 className="text-[11px] font-semibold uppercase tracking-[.12em] text-muted">Slides</h2>
       <div className="flex flex-col gap-2 overflow-auto">
         {project.pages.map((_, i) => (

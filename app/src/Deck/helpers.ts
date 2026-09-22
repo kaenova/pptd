@@ -16,3 +16,13 @@ export function thumbScale(thumbWidth: number, pageW: number): number {
   return thumbWidth > 0 ? (thumbWidth - 12) / pageW : 0
 }
 
+/** New default text element centered on (x, y) canvas coordinates. */
+export function newTextElement(x: number, y: number): import('../types').TextElement {
+  return {
+    elementId: `text-${crypto.randomUUID().slice(0, 8)}`,
+    elementType: 'text',
+    bounds: [Math.round(x - 100), Math.round(y - 16), 200, 32],
+    content: { text: 'Text', fontSize: 24 },
+  }
+}
+
