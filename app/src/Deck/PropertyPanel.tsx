@@ -1,9 +1,10 @@
 /**
- * PropertyPanel — floating editor for the selected element / page props.
- * Renders nothing in present mode or with no selection (page props via toggle).
+ * PropertyPanel — property editor body for the selected element / page props.
+ * Hosted inside the DeckTool properties dropdown; renders nothing in present mode.
  * Each change commits an undoable snapshot command immediately.
  */
 import { useState } from 'react'
+import { ArrowDown, ArrowDownToLine, ArrowUp, ArrowUpToLine } from 'lucide-react'
 import type { Border, Element, Fill, ImageElement, IconElement, LineElement, LoadedProject, Page, Shadow, ShapeElement, TextElement, TextContent } from '../types'
 import { useDeckCtx } from './context'
 import { multiSnapshotCmd, pageCmd, reorderCmd } from './commands'
@@ -109,8 +110,6 @@ export function PropertyPanel() {
   const page = project.pages[index]
   const sel = page.elements.filter(e => editor.selection.includes(e.elementId))
   const el = sel.length === 1 ? sel[0] : undefined
-  const show = el || pageMode
-  if (!show) return null
 
   // helper: commit element patch
   const patch = (fn: (e: Element) => Element, label: string) => {
@@ -119,8 +118,10 @@ export function PropertyPanel() {
   }
   const transformable = (el?.elementType ?? '') !== 'text' && el ? el as unknown as { rotation?: number; opacity?: number } : undefined
 
+  const LAYER_ICONS = { back: ArrowDownToLine, backward: ArrowDown, forward: ArrowUp, front: ArrowUpToLine } as const
+
   return (
-    <div className="absolute right-3 top-3 z-20 max-h-[calc(100%-24px)] w-60 overflow-auto rounded-xl border border-line bg-panel p-3 text-xs shadow-lg" aria-label="Properties">
+    <>
       <div className="mb-2 flex items-center justify-between">
         <b className="text-fg">{el ? `${el.elementType} · ${el.elementId.slice(0, 14)}` : 'Page'}</b>
         <button className="rounded-md border border-line px-1.5 py-0.5 text-[10px] text-dim hover:bg-panel-raised"
@@ -145,19 +146,22 @@ export function PropertyPanel() {
           <div className={row}>
             <span className={label}>layer</span>
             <span className="flex gap-1">
-              {(['back', 'backward', 'forward', 'front'] as const).map(d => (
-                <button key={d} className="rounded-md border border-line px-1.5 py-0.5 text-[10px] hover:bg-panel-raised"
-                  title={`send ${d}`} onClick={() => runCommand(reorderCmd(index, editor.selection, d))}>
-                  {d === 'back' ? '⤓' : d === 'backward' ? '↓' : d === 'forward' ? '↑' : '⤒'}
-                </button>
-              ))}
+              {(['back', 'backward', 'forward', 'front'] as const).map(d => {
+                const LIcon = LAYER_ICONS[d]
+                return (
+                  <button key={d} className="grid size-6 place-items-center rounded-md border border-line hover:bg-panel-raised"
+                    title={`send ${d}`} onClick={() => runCommand(reorderCmd(index, editor.selection, d))}>
+                    <LIcon aria-hidden="true" className="size-3.5" />
+                  </button>
+                )
+              })}
             </span>
           </div>
         </div>
       )}
 
       {(!el || pageMode) && <PagePanel page={page} run={label => runCommand(label)} project={project} index={index} />}
-    </div>
+    </>
   )
 }
 

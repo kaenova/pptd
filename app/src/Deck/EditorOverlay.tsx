@@ -4,12 +4,19 @@
  * drag-move, marquee, double-click-to-edit. Renderers stay dumb.
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { icons, type LucideIcon } from 'lucide-react'
 import type { Element, TextElement } from '../types'
 import { useDeckCtx } from './context'
 import { addElementCmd, moveCmd, multiSnapshotCmd } from './commands'
 import { localDelta, resizeBounds, snapAngle, normAngle, resizedElement, rectBounds, newTextElement, newShapeElement, newLineElement, newImageElement, newIconElement, MIN_SIZE, snapDelta, type Guide, type Bounds, type Handle } from './helpers'
 
 const MIN_DRAG = 2 // px (screen) before a pointer press counts as a drag
+
+/** Kebab lucide name → rendered glyph (icon picker). */
+function IconPreview({ name }: { name: string }) {
+  const Cmp = (icons as Record<string, LucideIcon>)[name.replace(/(^|[-])([a-z0-9])/g, (_, _s, c: string) => c.toUpperCase())]
+  return Cmp ? <Cmp aria-hidden="true" className="size-4" /> : null
+}
 const HANDLES: Handle[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']
 const HANDLE_CURSOR: Record<Handle, string> = {
   nw: 'nwse-resize', se: 'nwse-resize', ne: 'nesw-resize', sw: 'nesw-resize',
@@ -162,7 +169,7 @@ export function EditorOverlay() {
   }, [index, runCommand, dispatch, setTool])
 
   const pickIcon = (name: string) => {
-    const el = newIconElement(`fas:${name}`, iconPick!.x, iconPick!.y)
+    const el = newIconElement(name, iconPick!.x, iconPick!.y)
     runCommand(addElementCmd(index, el))
     dispatch({ type: 'select', ids: [el.elementId] })
     setIconPick(null)
@@ -465,7 +472,7 @@ export function EditorOverlay() {
                 className="grid size-8 place-items-center rounded-md text-fg hover:bg-accent hover:text-zinc-900"
                 onClick={() => pickIcon(n)}
               >
-                <i className={`fa-solid fa-${n}`} />
+                <IconPreview name={n} />
               </button>
             ))}
           </div>
@@ -487,16 +494,16 @@ export function editingTextEl(page: { elements: Element[] }, editingId: string |
   return el && el.elementType === 'text' ? (el as TextElement) : undefined
 }
 
-// Common FA7 free-solid icon names for the icon tool picker.
-// ponytail: static ~60-name list; swap to live FA metadata search if users need more.
+// Common lucide icon names for the icon tool picker.
+// ponytail: static ~60-name list; swap to live lucide metadata search if users need more.
 const ICONS = [
-  'house', 'user', 'users', 'gear', 'star', 'heart', 'magnifying-glass', 'envelope',
-  'phone', 'cart-shopping', 'truck', 'globe', 'calendar', 'clock', 'location-dot', 'bookmark',
-  'flag', 'tag', 'bell', 'comment', 'paper-plane', 'link', 'lock', 'key',
-  'shield-halved', 'circle-check', 'circle-xmark', 'circle-info', 'triangle-exclamation', 'plus', 'minus',
-  'check', 'xmark', 'arrow-right', 'arrow-left', 'arrow-up', 'arrow-down',
+  'house', 'user', 'users', 'settings', 'star', 'heart', 'search', 'mail',
+  'phone', 'shopping-cart', 'truck', 'globe', 'calendar', 'clock', 'map-pin', 'bookmark',
+  'flag', 'tag', 'bell', 'message-circle', 'send', 'link', 'lock', 'key',
+  'shield-half', 'circle-check', 'circle-x', 'info', 'triangle-alert', 'plus', 'minus',
+  'check', 'x', 'arrow-right', 'arrow-left', 'arrow-up', 'arrow-down',
   'chart-line', 'chart-column', 'chart-pie', 'file', 'folder', 'image', 'video',
-  'camera', 'music', 'play', 'code', 'robot', 'lightbulb', 'fire', 'trophy',
-  'medal', 'gift', 'sun', 'moon', 'cloud', 'bolt', 'leaf', 'car', 'plane',
-  'rocket', 'wrench', 'briefcase', 'building', 'school', 'book', 'pen', 'pencil', 'trash', 'thumbs-up',
+  'camera', 'music', 'play', 'code', 'bot', 'lightbulb', 'flame', 'trophy',
+  'medal', 'gift', 'sun', 'moon', 'cloud', 'zap', 'leaf', 'car', 'plane',
+  'rocket', 'wrench', 'briefcase', 'building', 'school', 'book', 'pen-line', 'pencil', 'trash', 'thumbs-up',
 ]

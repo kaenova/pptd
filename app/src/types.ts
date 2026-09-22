@@ -202,7 +202,7 @@ export interface IconElement extends ElementBase {
   rotation?: number
   opacity?: number
   flip?: [boolean, boolean]
-  iconName: string // "fas:house"
+  iconName: string // lucide kebab name ("house"); legacy "fas:house" still renders
   fill?: Fill
   border?: Border
   shadow?: Shadow

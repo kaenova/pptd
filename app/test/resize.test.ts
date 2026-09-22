@@ -127,13 +127,23 @@ describe('creation factories', () => {
   })
   it('newImageElement/newIconElement defaults', () => {
     assert.deepEqual(newImageElement('blob:x', [0, 0, 10, 10]).fit, { mode: 'cover' })
-    const i = newIconElement('fas:house', 100, 100)
-    assert.equal(i.iconName, 'fas:house')
+    const i = newIconElement('house', 100, 100)
+    assert.equal(i.iconName, 'house')
     assert.deepEqual(i.bounds, [68, 68, 64, 64])
+  })
+  it('icon name resolution (lucide + legacy FA)', () => {
+    assert.equal(resolveIcon('house'), icons.House)
+    assert.equal(resolveIcon('lightbulb'), icons.Lightbulb)
+    assert.equal(resolveIcon('fas:house'), icons.House) // legacy prefix stripped
+    assert.equal(resolveIcon('fas:magnifying-glass'), icons.Search) // FA-only alias
+    assert.equal(resolveIcon('chart-line'), icons.ChartLine)
+    assert.equal(resolveIcon('nope-not-real'), FALLBACK_ICON)
   })
 })
 
 import { snapDelta } from '../src/Deck/helpers'
+import { icons } from 'lucide-react'
+import { resolveIcon, FALLBACK_ICON } from '../src/render/elements/Icon'
 
 describe('snapDelta', () => {
   const t = [500, 0, 100, 100] as [number, number, number, number] // edges: x 500,600; center 550
