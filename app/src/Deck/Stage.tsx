@@ -81,6 +81,8 @@ export function DeckStage({ children }: { children: ReactNode }) {
       className={`relative flex h-full min-w-0 flex-1 items-center justify-center${tool === 'text' ? ' cursor-text' : ''}${!present ? ' select-none' : ''}`}
       onClick={e => {
         if (tool === 'text') addTextAt(e)
+        // click outside the canvas (stage chrome) → deselect, Figma-style
+        else if (!present && !(e.target as Element).closest('#canvasWrap') && editor.selection.length) dispatch({ type: 'deselect' })
         // overlay handles deselect; replay only when nothing is selected
         else if (!editor.selection.length && !onSelect && !present) replay()
       }}
