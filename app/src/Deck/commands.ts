@@ -47,3 +47,16 @@ export function addElementCmd(pageIndex: number, el: Element): Command {
     undo: p => mapPage(p, pageIndex, pg => ({ ...pg, elements: pg.elements.filter(e => e.elementId !== el.elementId) })),
   }
 }
+
+/** Replace several elements with new versions (resize/rotate/etc.); undo swaps back. */
+export function multiSnapshotCmd(pageIndex: number, before: Element[], after: Element[], label: string): Command {
+  const map = new Map(after.map(e => [e.elementId, e]))
+  const swap = (p: LoadedProject) =>
+    mapPage(p, pageIndex, pg => ({ ...pg, elements: pg.elements.map(e => map.get(e.elementId) ?? e) }))
+  const beforeMap = new Map(before.map(e => [e.elementId, e]))
+  return {
+    label,
+    do: swap,
+    undo: p => mapPage(p, pageIndex, pg => ({ ...pg, elements: pg.elements.map(e => beforeMap.get(e.elementId) ?? e) })),
+  }
+}
