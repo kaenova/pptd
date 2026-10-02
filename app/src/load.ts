@@ -90,6 +90,13 @@ export async function loadProject(src: FileSource): Promise<LoadedProject> {
   for (const rel of pptd.pages) {
     const page = yamlLoad(await src.read(base + rel)) as Page
     if (!page || !Array.isArray(page.elements)) throw new Error(`invalid page: ${rel}`)
+    const ids = new Set<string>()
+    for (const [index, el] of page.elements.entries()) {
+      if (typeof el?.elementId !== 'string' || !el.elementId.trim())
+        throw new Error(`${rel}: element ${index + 1}: elementId must be a nonempty string`)
+      if (ids.has(el.elementId)) throw new Error(`${rel}: duplicate elementId: ${el.elementId}`)
+      ids.add(el.elementId)
+    }
     pages.push(resolveSrc(page, base, urlOf) as Page)
     pagePaths.push(base + rel)
   }

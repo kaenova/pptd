@@ -119,7 +119,13 @@ def build(pptd_path, out_path):
         slide = prs.slides.add_slide(prs.slide_layouts[6])
         _set_background(slide, page.get("background"), theme, root, prs)
         shape_ids = {}
-        for el in page.get("elements", []):
+        for index, el in enumerate(page.get("elements", []), 1):
+            element_id = el.get("elementId") if isinstance(el, dict) else None
+            if not isinstance(element_id, str) or not element_id.strip():
+                raise ValueError(f"{page_rel}: element {index}: elementId must be a nonempty string")
+            if element_id in shape_ids:
+                raise ValueError(f"{page_rel}: duplicate elementId: {element_id}")
+            shape_ids[element_id] = None
             shape = _render_element(slide, el, theme, root)
             if shape is not None:
                 shape_ids[el.get("elementId")] = (

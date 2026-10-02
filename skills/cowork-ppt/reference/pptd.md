@@ -508,6 +508,19 @@ elements:
 
 Common properties of all elements.
 
+**Every element must declare `elementId`: a nonempty string, unique within its page.**
+This is required for every element type, even without animations. IDs may repeat
+across different pages. Missing, blank, non-string, or duplicate IDs are invalid;
+the local app loader and `pptd_utils` exporter reject them. IDs are not generated
+automatically.
+
+```yaml
+- elementId: title-1
+  elementType: text
+  bounds: [100, 50, 760, 80]
+  content: {text: Annual Work Summary}
+```
+
 ```ts
 interface ElementBase {
   elementId: string;                                                      // constraint: unique within the same page; unique element ID

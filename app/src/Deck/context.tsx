@@ -66,5 +66,5 @@ function useDeckCtx(): DeckCtx {
   return ctx
 }
 
-export type { DeckCtx, DeckFeatures }
+export type { DeckCtx }
 export { Ctx, useDeckCtx }

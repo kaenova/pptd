@@ -59,7 +59,7 @@ export function PageView({ page, slide, onSelect, static: isStatic = false, edit
       {page.elements.map(el => {
         const anim = active.get(el.elementId)
         const hidden = groups.length > 0 && !visible.has(el.elementId) && page.animations?.some(a => a.elementId === el.elementId)
-        if (editingId === el.elementId) return null // editor overlay replaces it
+        if (editingId !== undefined && editingId === el.elementId) return null // editor overlay replaces it
         return <div
           key={el.elementId}
           className={act ? 'cursor-crosshair' : undefined}
