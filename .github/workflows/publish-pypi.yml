@@ -14,11 +14,17 @@ env:
 jobs:
   verify:
     runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      tag: ${{ steps.release.outputs.tag }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
+      - name: Set dated release version
+        id: release
+        run: python scripts/set_release_version.py
       - run: python -m pip install --upgrade pip build
       - run: python -m pip install .
       - run: python -m build
@@ -28,13 +34,18 @@ jobs:
   publish:
     needs: verify
     runs-on: ubuntu-24.04
-    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
     environment: pypi
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
+      - name: Set verified release version
+        env:
+          RELEASE_VERSION: ${{ needs.verify.outputs.version }}
+        run: python scripts/set_release_version.py
       - run: python -m pip install --upgrade pip build twine
       - run: python -m build
       - name: Publish to PyPI
@@ -42,3 +53,14 @@ jobs:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         run: python -m twine upload dist/*
+      - name: Tag published commit
+        env:
+          RELEASE_TAG: ${{ needs.verify.outputs.tag }}
+        run: |
+          git fetch origin --tags
+          if git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"; then
+            test "$(git rev-list -n 1 "$RELEASE_TAG")" = "$GITHUB_SHA"
+          else
+            git tag "$RELEASE_TAG" "$GITHUB_SHA"
+            git push origin "refs/tags/$RELEASE_TAG"
+          fi
