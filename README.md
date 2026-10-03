@@ -42,7 +42,7 @@ The converter verifies slide count, fade transitions, supported content, and ZIP
 PPTD reference:
 
 ```text
-skills/cowork-ppt/reference/pptd.md
+skills/pptd/reference/pptd.md
 ```
 
 Toolkit documentation:
@@ -60,7 +60,7 @@ npm run sync:pptd
 npm run pack:check
 ```
 
-`pptd_utils/` is the source copy. `skills/cowork-ppt/scripts/pptd_utils/` is the synchronized packaged copy.
+`pptd_utils/` is the source copy. `skills/pptd/scripts/pptd_utils/` is the synchronized packaged copy.
 
 ## Project layout
 

@@ -18,13 +18,13 @@ Implementation Handover Notes (Phase 1 — DONE):
   - `folderSource(File[])` — upload/drop; images become `URL.createObjectURL` blob URLs at source-construction time
   - `httpSource(baseUrl)` — dev server; reads `manifest.json` (all relative paths) to find the root `.pptd`
   - disk source only exists inside `app/test/smoke.test.ts` (not shipped)
-- Example decks over HTTP: `scripts/gen_example_manifest.py` emits `manifest.json` per example deck (run once; not part of npm test). Dev proxy: `/example/*` → `localhost:5174` = `python3 -m http.server 5174` rooted at `skills/cowork-ppt/example/` (see `app/vite.config.ts`). No 5174 server → "load example" fails; upload/drop still works.
+- Example decks over HTTP: `scripts/gen_example_manifest.py` emits `manifest.json` per example deck (run once; not part of npm test). Dev proxy: `/example/*` → `localhost:5174` = `python3 -m http.server 5174` rooted at `skills/pptd/example/` (see `app/vite.config.ts`). No 5174 server → "load example" fails; upload/drop still works.
 - `resolveSrc()` rewrites EVERY non-http `src` string recursively (backgrounds, image elements) — keyed relative to the `.pptd` dir. Page src refs are resolved at load; don't resolve again in renderers.
 - `stripRoot()` strips the picked-folder prefix from `webkitRelativePath`. Drop path uses `webkitGetAsEntry` recursion (readEntries ≤100/call, looped).
 - `Renderer.tsx` — Phase-1 element coverage: text (align/letterSpacing/lineHeight), shape rect+roundRect only (radius hardcoded 16 — replace in Phase 3 shapes), image (objectFit), chart = dashed placeholder. React style prop is a CSSProperties OBJECT — not a CSS string (tsc caught this).
 - z-order = JSX map order over `page.elements` (later = higher). Do NOT add z-index.
 - Tests: `cd app && bun test` — 5 tests, incl. real-deck load from disk + missing-page error path. `bunx tsc -b` clean; `vite build` passes (~85KB gzip).
-- Dev runbook: `cd app && bun run dev` (5173) + `python3 -m http.server 5174 -d skills/cowork-ppt/example`.
+- Dev runbook: `cd app && bun run dev` (5173) + `python3 -m http.server 5174 -d skills/pptd/example`.
 - Known gaps → next phases: theme `$refs` unhandled (Phase 2 must resolve; yu7 uses them heavily), RichText escaped-only, line/icon/table unrendered (Phase 3/4), animations none (Phase 6).
 
 ## Phase 2 — Primitives
@@ -63,7 +63,7 @@ Implementation Handover Notes (Phase 3 — DONE):
 - **Icon:** FA via jsDelivr CDN `<link data-pptd-fa>` injected on first icon (fas→fa-solid etc.). ponytail: swap to bundled @fortawesome/fontawesome-free if offline rendering matters.
 - **fx.ts:** rotation (CSS deg, clockwise ✓)/flip/opacity wrapper transform for shape/line/image/icon (spec: Text has none). fx on wrapper means rotation applies to border+shadow+clip together — correct.
 - **theme fix:** `resolveTextStyle` now returns `lineHeight` (multiple, default 1) AND `lineHeightPx` separately — Phase 2 mixed them (lineHeightPx=20 would render as 20× multiplier). textStyleProps emits `"33px"` when px set.
-- **Torture deck:** `skills/cowork-ppt/example/torture/` — 3 pages exercising every Phase-3 feature (shapes incl. custom hollow ring, all 4 arrow types + curve modes, crop/cropShape/fit/rotation on images, FA icons). Loaded via `/?deck=torture`. Keep as regression fixture. NOTE: spec's custom-path example uses degenerate single-arc circles (`A r,r 0 1 1 x±ε`) — Chromium picks the wrong center for the inner contour; write circles as two half-arcs.
+- **Torture deck:** `skills/pptd/example/torture/` — 3 pages exercising every Phase-3 feature (shapes incl. custom hollow ring, all 4 arrow types + curve modes, crop/cropShape/fit/rotation on images, FA icons). Loaded via `/?deck=torture`. Keep as regression fixture. NOTE: spec's custom-path example uses degenerate single-arc circles (`A r,r 0 1 1 x±ε`) — Chromium picks the wrong center for the inner contour; write circles as two half-arcs.
 - Tests: 32 total (14 element/geometry, 13 primitives, 5 loader). tsc + oxlint clean; build 286KB (88.9 gzip).
 - **Exit check:** verified by screenshots — yu7 8 slides, animation deck 8, dji 18 (incl. wrap:false single-lines), torture 3. soffice pixel-diff = phase 7 harness.
 - Known gaps (deliberate): pie/arc/chord/bracePair geometry; image-fill on shapes (SVG pattern); hollow cropShapes (CSS path() has no fill-rule); gradient/image fills on icons. Add when a deck needs them.

@@ -2,7 +2,7 @@
 
 Offline PPTD toolkit — full-spec `.pptd` → `.pptx` converter + slide image export (collage / single slide). Pure Python, no browser required.
 
-Built against the PPTD v2 spec (`skills/cowork-ppt/reference/pptd.md`, relative to the repo root).
+Built against the PPTD v2 spec (`skills/pptd/reference/pptd.md`, relative to the repo root).
 
 ## Install / dependencies
 

@@ -1,6 +1,6 @@
 # pptd-viewer
 
-Browser viewer for [PPTD](../../skills/cowork-ppt/reference/pptd.md) slide decks (.pptd folder format). Renders text, shapes, lines, images, icons, tables and all 13 chart types (ECharts), with entrance/exit/emphasis animations, speaker notes and a fullscreen present mode. No server, no build step for decks — just a folder.
+Browser viewer for [PPTD](../../skills/pptd/reference/pptd.md) slide decks (.pptd folder format). Renders text, shapes, lines, images, icons, tables and all 13 chart types (ECharts), with entrance/exit/emphasis animations, speaker notes and a fullscreen present mode. No server, no build step for decks — just a folder.
 
 Stack: Vite + React + TypeScript, `js-yaml`, `echarts`. No state/UI libraries.
 
@@ -15,7 +15,7 @@ bun run test     # bun test
 bun run lint     # oxlint src test
 ```
 
-A static file server on port 5174 serving `skills/cowork-ppt/example/` enables the built-in example decks (Vite dev proxy `/example`).
+A static file server on port 5174 serving `skills/pptd/example/` enables the built-in example decks (Vite dev proxy `/example`).
 
 ## Usage
 
@@ -35,8 +35,8 @@ Page-level `animations` arrays follow the spec: `onClick` starts a click group, 
 Side-by-side viewer vs. LibreOffice reference render, per slide:
 
 ```sh
-python3 -m pptd_utils png all skills/cowork-ppt/example/yu7-ppt/yu7.pptd
-# -> skills/cowork-ppt/example/yu7-ppt/yu7-png/slide_NN.png
+python3 -m pptd_utils png all skills/pptd/example/yu7-ppt/yu7.pptd
+# -> skills/pptd/example/yu7-ppt/yu7-png/slide_NN.png
 bun run dev &
 open "http://localhost:5173/?deck=yu7-ppt&qa=yu7-ppt"
 ```

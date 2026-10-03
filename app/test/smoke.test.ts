@@ -5,7 +5,7 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { loadProject, folderSource, stripRoot } from '../src/load'
 
-const DECK = path.join(import.meta.dir, '../../skills/cowork-ppt/example/yu7-ppt')
+const DECK = path.join(import.meta.dir, '../../skills/pptd/example/yu7-ppt')
 
 function diskSource(root: string) {
   const rel = (p: string) => path.join(root, p)

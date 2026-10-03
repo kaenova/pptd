@@ -1,4 +1,4 @@
-// PPTD v2 format types — subset needed for rendering. Spec: skills/cowork-ppt/reference/pptd.md
+// PPTD v2 format types — subset needed for rendering. Spec: skills/pptd/reference/pptd.md
 // ponytail: extend per phase, don't spec-dump. Phase 2 adds Border/Shadow/fontFamily/theme/customFonts.
 
 // ---------- Table (Phase 4) ----------

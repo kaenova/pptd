@@ -1,10 +1,10 @@
 ---
-name: cowork-ppt
+name: pptd
 description: Create, edit, replicate, read, and export presentations. For every PPT task, the default deliverables are BOTH (1) a self-contained PPTD project folder containing the .pptd manifest plus pages/media dependencies and (2) a locally generated .pptx with embedded fonts and fade slide transitions. Use for any presentation, PowerPoint, PPT/PPTX, slide deck, PPTD, infographic, or poster task unless the user explicitly requests another format. Deliver with normal local file/folder links using absolute paths.
 ---
 
 # Definition
-cowork-ppt is a presentation creation and export skill built around Moonshot AI's PPTD format and the `pptd-utils` Python package. It defines a YAML-format intermediate DSL (`.pptd`) that abstracts OOXML and keeps each page self-contained.
+pptd is a presentation creation and export skill built around Moonshot AI's PPTD format and the `pptd-utils` Python package. It defines a YAML-format intermediate DSL (`.pptd`) that abstracts OOXML and keeps each page self-contained.
 
 **The default output is not PPTD-only.** Unless the user explicitly opts out, always produce both:
 

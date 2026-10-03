@@ -1,5 +1,5 @@
 // Chart mapper: PPTD v2 chart element → ECharts option.
-// Spec: skills/cowork-ppt/reference/pptd.md "Chart (charts)" §; converter twin: scripts/pptd_utils/charts_native.py.
+// Spec: skills/pptd/reference/pptd.md "Chart (charts)" §; converter twin: scripts/pptd_utils/charts_native.py.
 import type { EChartsCoreOption } from 'echarts/core'
 import { resolveColor, resolveFontFamily, type ThemeCtx } from '../../theme'
 

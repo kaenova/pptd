@@ -31,7 +31,7 @@ def check(name, pptd, out):
 
 def main():
     check("full-spec", "tests/fixtures/full/full.pptd", "full.pptx")
-    check("minimal", "skills/cowork-ppt/tests/fixtures/minimal/minimal.pptd",
+    check("minimal", "skills/pptd/tests/fixtures/minimal/minimal.pptd",
           "minimal.pptx")
     check("ml-smp", "ml-smp/deck.pptd", "mlsmp.pptx")
     # targeted structural assertions on the full deck

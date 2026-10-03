@@ -1,6 +1,6 @@
 # Canvas Editor Rewrite Plan
 
-**Goal:** in-app direct manipulation editing of a loaded PPTD deck (Figma-style), covering the full element surface of the PPTD v2 spec (text, shape, line, image, icon, table, chart) plus page-level ops. Spec: `skills/cowork-ppt/reference/pptd.md`.
+**Goal:** in-app direct manipulation editing of a loaded PPTD deck (Figma-style), covering the full element surface of the PPTD v2 spec (text, shape, line, image, icon, table, chart) plus page-level ops. Spec: `skills/pptd/reference/pptd.md`.
 
 **What exists (keep):** immutable `patchProject` pipeline (Shell owns state), deck ctx (`tool/selectedId/editingId`), `DeckTool` palette, text in-place editing with spec-subset serializer, drag-move with live preview, selection/hover affordances in `PageView`, animation playback.
 

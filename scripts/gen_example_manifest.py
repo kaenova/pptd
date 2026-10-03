@@ -3,7 +3,7 @@
 so the dev-server viewer can load example decks over HTTP without upload.
 
 Run: python3 scripts/gen_example_manifest.py
-Output: skills/cowork-ppt/example/<deck>/manifest.json (gitignored-able)
+Output: skills/pptd/example/<deck>/manifest.json (gitignored-able)
 """
 from pathlib import Path
 
