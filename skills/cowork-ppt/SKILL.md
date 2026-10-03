@@ -4,7 +4,7 @@ description: Create, edit, replicate, read, and export presentations. For every 
 ---
 
 # Definition
-cowork-ppt is a presentation creation and export skill built around Moonshot AI's PPTD format and an offline Python converter (`pptd_utils`). It defines a YAML-format intermediate DSL (`.pptd`) that abstracts OOXML and keeps each page self-contained.
+cowork-ppt is a presentation creation and export skill built around Moonshot AI's PPTD format and the `pptd-utils` Python package. It defines a YAML-format intermediate DSL (`.pptd`) that abstracts OOXML and keeps each page self-contained.
 
 **The default output is not PPTD-only.** Unless the user explicitly opts out, always produce both:
 
@@ -14,15 +14,15 @@ cowork-ppt is a presentation creation and export skill built around Moonshot AI'
 Existing PPTX files may also be converted into PPTD for editing, after which both outputs are delivered again.
 
 ## The pptd format
-The .pptd format is a simplified abstraction layer over OOXML that follows basic YAML syntax. This abstraction preserves the core content of OOXML (theme, page layout, element positions and definitions, etc.) while removing complex nesting logic such as Masters; every page is self-contained — what you see is what you get. Read reference/pptd.md for the complete definition of this DSL.
+The .pptd format is a simplified abstraction layer over OOXML that follows basic YAML syntax. This abstraction preserves the core content of OOXML (theme, page layout, element positions and definitions, etc.) while removing complex nesting logic such as Masters; every page is self-contained — what you see is what you get. Read `reference/pptd.md` for the complete definition of this DSL.
 
 ## PPT production workflow
 
 ### step0. Check local prerequisites
-Default delivery includes PPTX export and visual QA via `scripts/pptd_utils/`, which need a local Python toolchain. **Before generating**, verify:
+Default delivery includes PPTX export and visual QA via the locally installed `pptd-utils` PyPI package. **Before generating**, verify:
 
-1. **python3**: run `python3 --version` (on Windows, `python` may be the correct command).
-2. **Python packages**: `pip install python-pptx lxml PyYAML Pillow` (auto-installed with `pip --user` when missing). Optional, unlocked when present: `latex2mathml` + `mathml2omml` (native equations from `\( ... \)`), `fontTools` + `brotli` (customFonts embedding).
+1. **Python**: run `python3 --version` (on Windows, `python` may be the correct command).
+2. **Converter**: run `pptd --help`. If missing, install with `python3 -m pip install pptd-utils` (on Windows, use `python -m pip install pptd-utils`). Optional features: `python3 -m pip install 'pptd-utils[math,fonts]'` enables native equations from `\( ... \)` and customFonts embedding.
 3. **LibreOffice**: `soffice` on PATH — needed only for visual QA slide images (see step4). If missing, skip image-based QA and fall back to the structural review, stating so.
 4. Downloads (Font Awesome fonts, URL-referenced images/fonts declared in the deck) cache under `~/.cache/pptd_utils/`; a deck without remote references exports fully offline.
 
@@ -91,9 +91,9 @@ When generating a PPT, adopt different production approaches for different user 
 
 ##### Design system
 1. Read the general constraints section of the `reference/slides_categories.md` guide, and read the scenario document corresponding to the user's query as the design foundation
-2. Read the specified design system as the presentation style: either the user-provided design scheme, or the matching preset under `reference/design_system/` (search by name / path the user specified; prefer the folder's `design.md` when present). It is strictly forbidden to reference or mix in other design styles
-3. Produce the presentation with reference to the above
-4. Do not auto-pick a preset during self-directed design; only use `reference/design_system/` when a preset is explicitly specified
+2. Read the specified design system as the presentation style: either the user-provided scheme or the matching `reference/design_system/<category>/<preset>/design.md`. All presets use this category/preset folder structure. If category folder has `BASELINE.md`, read it with selected preset; preset-specific rules override baseline on conflict. Ignore `source-notes.md` unless user asks to inspect source material. Never mix guidance from multiple presets.
+3. Produce the presentation based on the selected guidance.
+4. Do not auto-pick a preset during self-directed design; use `reference/design_system/` only when a preset is explicitly specified.
 
 ##### Using a template
 1. Convert the user's uploaded pptx file into pptd form
@@ -127,12 +127,10 @@ When generating a PPT, adopt different production approaches for different user 
    - Run the offline converter's collage export (renders via LibreOffice):
 
      ```bash
-     cd ~/.agents/skills/cowork-ppt/scripts && python3 -m pptd_utils \
-       /abs/path/project/deck.pptd \
-       --collage /abs/path/project/.qa-images/overview.png
-     ```
+   pptd png collage /abs/path/project/deck.pptd
+   ```
 
-     Slides render in deck order on the numbered contact sheet; use `--slide N out.png` for a single full-resolution page and `--all-slides dir/` for all pages.
+   This writes `/abs/path/project/deck-collage.png`. Slides render in deck order on the numbered contact sheet. To export selected slides as full-resolution PNGs, run `pptd png N /abs/path/project/deck.pptd`; this writes them under `/abs/path/project/deck-png/`.
    - Read the stitched overview image (`.qa-images/overview.png`) and check every page against this list:
      1. 图片是否清晰、不变形（无拉伸、压缩、模糊）
      2. 文字是否压在关键画面（人脸、产品主体、Logo 等）上
@@ -141,7 +139,7 @@ When generating a PPT, adopt different production approaches for different user 
      5. 排版是否统一（对齐、间距、字号层级、页边距）
      6. 文字是否可能溢出文本框（文本过长、行距过密、字号过大）
      7. 内容是否被上层元素遮挡
-   - For any suspicious page, read its full-resolution image (`python3 -m pptd_utils deck.pptd --slide N page.png`) to confirm the problem before editing.
+   - For any suspicious page, export it with `pptd png N /abs/path/project/deck.pptd` and read the corresponding full-resolution image under `/abs/path/project/deck-png/` before editing.
    - Fix issues in the corresponding `.page` file, re-run the collage export, and review the new overview; repeat until every page passes.
    - Do not export the PPTX until the visual review passes. `.qa-images/` is an intermediate QA artifact and may be deleted after delivery. Note: LibreOffice rendering approximates the official editor — expect minor font-metric and native-chart styling differences; fix layout problems, not cosmetic renderer drift.
 3. When the model cannot read images, fall back to a structural review of the generated pages (bounds, overflow-prone long text, contrast, hierarchy, layout density) over multiple rounds, and state that image-based visual QA was skipped.
@@ -165,15 +163,13 @@ When generating a PPT, adopt different production approaches for different user 
    - the `.pptd` manifest;
    - the `pages/` directory and `media/` directory when present;
    - the generated `.pptx` file.
-4. PPTX conversion: use the vendored offline converter `scripts/pptd_utils/` (python-pptx + hand-built DrawingML; native editable chart parts, unsupported chart types rasterized, animations as full `p:timing` trees). It builds the PPTX, then runs a built-in structural self-check (`verify`) asserting slide/element counts, fade transition on every slide, notes, animations, chart accounting, customFonts embedding, and ZIP integrity:
+4. PPTX conversion: use the installed `pptd-utils` package (`pptd pptx`). It builds the PPTX, then runs a built-in structural self-check asserting slide/element counts, fade transition on every slide, notes, animations, chart accounting, customFonts embedding, and ZIP integrity:
 
    ```bash
-   cd ~/.agents/skills/cowork-ppt/scripts && python3 -m pptd_utils \
-     /abs/path/project/deck.pptd \
-     /abs/path/project/deck.pptx
+   pptd pptx /abs/path/project/deck.pptd
    ```
 
-   A project directory may be passed instead of the manifest only when it contains exactly one `.pptd` file. Existing output files are overwritten silently.
+   The command writes `/abs/path/project/deck.pptx`; existing output files are overwritten silently.
 5. Default PPTX options, built into the converter (spec defaults, no override flags):
    - page transition: `fade` (淡入淡出), written to every slide;
    - font embedding: `customFonts` declared in the deck are fetched (Google Fonts) and embedded as `fntdata` parts when `fontTools` + `brotli` are installed;
